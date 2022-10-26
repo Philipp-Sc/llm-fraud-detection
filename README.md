@@ -80,7 +80,7 @@ false positive 0
 If you are okay with few spam emails not classified as spam, but don't want any ham email classified as spam, select the later.
 
 # 
-- **rustbert-spam-detection** can be further improved by finding a better set of topics to be extracted and used for the classification. 
+- **rustbert-spam-detection** can be further improved by finding a better set of [topics/scam indicators](https://github.com/Philipp-Sc/rustbert-spam-detection/blob/main/package/src/build/mod.rs) to be extracted and used for the classification. 
 - Using a better model for the topic extraction and sentiment prediction should also improve the spam detection.
 - Replacing the [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) with a better model might also improve the performance. 
 
