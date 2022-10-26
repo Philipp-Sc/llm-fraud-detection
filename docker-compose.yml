@@ -1,0 +1,24 @@
+services:
+  rust-devel:
+    build:
+       context: .
+       dockerfile: ./Dockerfile
+    image: rust-devel-image
+    environment:
+       -  CARGO_HOME=/usr/cargo_home
+       -  CARGO_TARGET_DIR=/usr/target
+       -  RUSTBERT_CACHE=/usr/rustbert_cache
+    volumes:
+       - ./package:/usr/workspace
+       - ./cargo_home:/usr/cargo_home
+       - ./target:/usr/target
+       - ./rustbert_cache:/usr/rustbert_cache
+
+  editor:
+    build:
+       context: .
+       dockerfile: ./Dockerfile_Editor
+    image: helix-editor-image
+    volumes:
+       - ./package:/usr/workspace
+

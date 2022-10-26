@@ -1,0 +1,17 @@
+
+#FROM funtoo/stage3-intel64-skylake
+FROM rust:latest
+
+WORKDIR /usr/workspace
+
+RUN cd /usr && mkdir helix_config && cd ./workspace
+
+RUN git clone https://github.com/helix-editor/helix
+RUN cd helix;cargo install --path helix-term;ls -ll $PWD/runtime;mv $PWD/runtime /usr/helix_config/
+ENV HELIX_RUNTIME=/usr/helix_config/runtime
+RUN hx --grammar fetch
+RUN hx --grammar build
+
+RUN git clone https://github.com/rust-lang/rust-analyzer.git && cd rust-analyzer && cargo xtask install --server
+
+CMD ["hx"]
