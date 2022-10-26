@@ -1,3 +1,10 @@
+<div align="center">
+<img src="https://img.shields.io/github/languages/top/Philipp-Sc/rustbert-spam-detection">
+<img src="https://img.shields.io/github/repo-size/Philipp-Sc/rustbert-spam-detection">
+<img src="https://img.shields.io/github/commit-activity/m/Philipp-Sc/rustbert-spam-detection">
+<img src="https://img.shields.io/github/license/Philipp-Sc/rustbert-spam-detection">
+</div>
+
 # rustbert-spam-detection
 Robust semi-supervised spam detection using Rust native NLP pipelines.
 # About
