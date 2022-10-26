@@ -4,10 +4,7 @@ Robust semi-supervised spam detection using Rust native NLP pipelines.
 **rustbert-spam-detection** uses the NLP pipelines from [rust-bert](https://github.com/guillaume-be/rust-bert) to extract topics and sentiment from the given text. A simple [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) is trained to predict spam/ham. The training data is generated from the [LingSpam, EnronSpam and Spam Assassin Dataset](https://www.kaggle.com/datasets/nitishabharathi/email-spam-dataset) containing ham and spam email. Since the [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) is trained on latent features (the topic predictions) and NOT on a text encoding (such as Bag of Words, etc) much less datapoints are needed to generate an accurate model.
 #
 Note that the language models used by [rust-bert](https://github.com/guillaume-be/rust-bert) are in the order of the 100s of MBs to GBs. This impacts the hardware requirements and model inference time.
-# 
-- **rustbert-spam-detection** can be further improved by finding a better set of topics to be extracted and used for the classification. 
-- Using a better model for the topic extraction and sentiment prediction should also improve the spam detection.
-- Replacing the [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) with a better model might also improve the performance. 
+
 
 # Use
 
@@ -19,9 +16,8 @@ rust_scam_detection_tools = { git="https://github.com/Philipp-Sc/rustbert-spam-d
 ``` 
 Predict spam/ham:
 ```rust
-fn main() -> anyhow::Result<()> {
 
-    let sentences: [&str;6] = [
+pub const SENTENCES: [&str;6] = [
     "Lose up to 19% weight. Special promotion on our new weightloss.",
     "Hi Bob, can you send me your machine learning homework?",
     "Don't forget our special promotion: -30% on men shoes, only today!",
@@ -30,10 +26,15 @@ fn main() -> anyhow::Result<()> {
     "Social KYC oracle (TYC)  PFC is asking for 20k Luna to build a social KYC protocol.."
     ];
 
-    let scam_probabilities: Vec<f64> = rust_scam_detection_tools::scam_probabilities(&sentences)?;
+
+fn main() -> anyhow::Result<()> {
+
+    let scam_probabilities: Vec<f64> = rust_scam_detection_tools::scam_probabilities(&SENTENCES)?;
     println!("Predictions:\n{:?}",scam_probabilities);
     println!("Labels:\n[1.0, 0.0, 1.0, 0.0, 1.0, 0.0]");
+    Ok(())
 }
+
 ```
 ```
 [0.9183035714285714, 0.6243303571428571, 0.9877232142857143, 0.5344494047619046, 0.9184523809523809, 0.6588541666666666]
@@ -70,3 +71,12 @@ false positive 0
 - p(>=0.7) has the fewest **false positives** and a performance of 87%.
 
 If you are okay with few spam emails not classified as spam, but don't want any ham email classified as spam, select the later.
+
+# 
+- **rustbert-spam-detection** can be further improved by finding a better set of topics to be extracted and used for the classification. 
+- Using a better model for the topic extraction and sentiment prediction should also improve the spam detection.
+- Replacing the [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) with a better model might also improve the performance. 
+
+# Test with Docker
+```docker-compose build rust-devel``` (build image)   
+```docker-compose run --rm rust-devel cargo run --release``` (runs the example above)
