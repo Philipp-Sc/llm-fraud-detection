@@ -37,3 +37,5 @@ false positive 0
 ```
 - p(>=0.5) has the best performance (95%).
 - p(>=0.7) has the fewest **false positives** and a performance of 87%.
+
+If you are okay with few spam emails not classified as spam, but don't want any ham email classified as spam, select the later.
