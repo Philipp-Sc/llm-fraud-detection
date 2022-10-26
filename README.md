@@ -79,4 +79,4 @@ If you are okay with few spam emails not classified as spam, but don't want any 
 
 # Test with Docker
 ```docker-compose build rust-devel``` (build image)   
-```docker-compose run --rm rust-devel cargo run --release``` (runs the example above)
+```docker-compose run --rm rust-devel cargo run --release``` (runs the above example)
