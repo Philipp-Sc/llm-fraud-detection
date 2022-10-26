@@ -6,8 +6,7 @@ rustbert-spam-detection uses the NLP pipelines from [rust-bert](https://github.c
 Note that the language models used by [rust-bert](https://github.com/guillaume-be/rust-bert) are in the order of the 100s of MBs to GBs. This impacts the hardware requirements and model inference time.
 #
 This model can be further improved by finding a better set of topics to be extracted and used for the classification. Replacing the [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) with a better model might also improve the performance.
-#
-Model Performance:
+# Model Performance
 ```len of x_dataset / y_dataset: 13986
 true p(>=0.1)==label 9198
 false 4788
