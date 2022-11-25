@@ -1,16 +1,16 @@
 <div align="center">
-<img src="https://img.shields.io/github/languages/top/Philipp-Sc/rustbert-fraud-detection">
-<img src="https://img.shields.io/github/repo-size/Philipp-Sc/rustbert-fraud-detection">
-<img src="https://img.shields.io/github/commit-activity/m/Philipp-Sc/rustbert-fraud-detection">
-<img src="https://img.shields.io/github/license/Philipp-Sc/rustbert-fraud-detection">
+<img src="https://img.shields.io/github/languages/top/Philipp-Sc/rust-bert-fraud-detection">
+<img src="https://img.shields.io/github/repo-size/Philipp-Sc/rust-bert-fraud-detection">
+<img src="https://img.shields.io/github/commit-activity/m/Philipp-Sc/rust-bert-fraud-detection">
+<img src="https://img.shields.io/github/license/Philipp-Sc/rust-bert-fraud-detection">
 </div>
 
-# rustbert-fraud-detection
+# rust-bert-fraud-detection
 Robust semi-supervised fraud detection using Rust native NLP pipelines.
 # About
-**rustbert-fraud-detection** uses the NLP pipelines from [rust-bert](https://github.com/guillaume-be/rust-bert) to extract topics and sentiment from the given text. A simple [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) is trained to predict fraud/ham. The training data is generated from the [LingSpam, EnronSpam and Spam Assassin Dataset](https://www.kaggle.com/datasets/nitishabharathi/email-fraud-dataset) containing ham and fraud email. Since the [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) is trained on latent features ([topics/fraud indicators](https://github.com/Philipp-Sc/rustbert-fraud-detection/blob/main/package/src/build/mod.rs)) and NOT on a text encoding (such as Bag of Words) much less datapoints are needed to generate an accurate model.
+**rust-bert-fraud-detection** uses the NLP pipelines from [rust-bert](https://github.com/guillaume-be/rust-bert) to extract topics and sentiment from the given text. A simple [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) is trained to predict fraud/ham. The training data is generated from the [LingSpam, EnronSpam and Spam Assassin Dataset](https://www.kaggle.com/datasets/nitishabharathi/email-fraud-dataset) containing ham and fraud email. Since the [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) is trained on latent features ([topics/fraud indicators](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/mod.rs)) and NOT on a text encoding (such as Bag of Words) much less datapoints are needed to generate an accurate model.
 # 
-This project is part of [CosmosRustBot](https://github.com/Philipp-Sc/cosmos-rust-bot), which provides Governance Proposal Notifications for Cosmos Blockchains. To detect fake & fraud proposals **rustbert-fraud-detection** was created. Since **rustbert-fraud-detection** is semi-supervised it is works accross different domains, even though the [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) was trained only on a fraud/ham email dataset.
+This project is part of [CosmosRustBot](https://github.com/Philipp-Sc/cosmos-rust-bot), which provides Governance Proposal Notifications for Cosmos Blockchains. To detect fake & fraud proposals **rust-bert-fraud-detection** was created. Since **rust-bert-fraud-detection** is semi-supervised it is works accross different domains, even though the [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) was trained only on a fraud/ham email dataset.
 #
 Note that the language models used by [rust-bert](https://github.com/guillaume-be/rust-bert) are in the order of the 100s of MBs to GBs. This impacts the hardware requirements and model inference time.
 # Use
@@ -19,7 +19,7 @@ Add to your `Cargo.toml` manifest:
 
 ```ini
 [dependencies]
-rust_fraud_detection_tools = { git="https://github.com/Philipp-Sc/rustbert-fraud-detection.git" }
+rust_fraud_detection_tools = { git="https://github.com/Philipp-Sc/rust-bert-fraud-detection.git" }
 ``` 
 Predict fraud/ham:
 ```rust
@@ -80,11 +80,26 @@ false positive 0
 If you are okay with few fraud emails not classified as fraud, but don't want any ham email classified as fraud, select the later.
 
 # 
-- **rustbert-fraud-detection** can be further improved by finding a better set of [topics/fraud indicators](https://github.com/Philipp-Sc/rustbert-fraud-detection/blob/main/package/src/build/mod.rs) to be extracted and used for the classification. 
+- **rust-bert-fraud-detection** can be further improved by finding a better set of [topics/fraud indicators](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/mod.rs) to be extracted and used for the classification. 
 - Using a better model for the topic extraction and sentiment prediction should also improve the fraud detection.
 - Replacing the [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) with a better model might also improve the performance. 
 
-# Test with Docker
-```sudo docker build -t rust-devel-image .``` (build image)
+# Docker
+```sudo docker build -t rust-bert-fraud-detection .``` (build image)
 
-```sudo docker run -it --rm -v "$(pwd)/rustbert_cache":/usr/rustbert_cache -v "$(pwd)/target":/usr/target -v "$(pwd)/cargo_home":/usr/cargo_home -v "$(pwd)/package":/usr/workspace rust-devel-image cargo run --release``` (runs the above example)
+## Test
+
+```sudo docker run -it --rm -v "$(pwd)/rust_bert_cache":/usr/rust_bert_cache -v "$(pwd)/target":/usr/target -v "$(pwd)/cargo_home":/usr/cargo_home -v "$(pwd)/package":/usr/workspace rust-bert-fraud-detection cargo run --release``` (runs the above example)
+
+## Run as a service via UNIX sockets
+
+- Start service container:   
+```sudo docker run -d --rm -v "$(pwd)/rust_bert_cache":/usr/rust_bert_cache -v "$(pwd)/target":/usr/target -v "$(pwd)/cargo_home":/usr/cargo_home -v "$(pwd)/package":/usr/workspace -v "$(pwd)/tmp":/usr/workspace/tmp rust-bert-fraud-detection cargo run --release start_service```
+
+- Run service test:     
+```sudo docker run -it --rm -v "$(pwd)/rust_bert_cache":/usr/rust_bert_cache -v "$(pwd)/target":/usr/target -v "$(pwd)/cargo_home":/usr/cargo_home -v "$(pwd)/package":/usr/workspace -v "$(pwd)/tmp":/usr/workspace/tmp rust-bert-fraud-detection cargo run --release --no-default-features test_service```
+- Check out the ```Cargo.toml``` and ```main.rs``` to see how to send a request from your own Rust Application via UNIX sockets.
+
+- To later stop the service container:     
+```sudo docker container ls```    
+```sudo docker stop CONTAINER_ID```
