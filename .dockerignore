@@ -1,0 +1,8 @@
+./cargo_home
+./rustbert_cache
+./target
+./README.md
+./LICENSE
+./.gitignore
+./.dockerignore
+./package

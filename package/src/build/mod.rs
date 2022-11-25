@@ -4,7 +4,7 @@ pub mod language_model;
 pub mod feature_engineering;
 pub mod sentiment;
 
-pub const SCAM_INDICATORS: [&str;7] = [
+pub const FRAUD_INDICATORS: [&str;7] = [
     "(clickbait, suspected spam, fake news)", // 2122 // 1663 // 1697 // 1726
     "(untrustworthy, not to be trusted, unreliable source, blacklisted)", // 191 // 215 // 238 // 260
     "(call to immediate action)", // 160 // 211 // 224 // 244
@@ -13,7 +13,7 @@ pub const SCAM_INDICATORS: [&str;7] = [
     "(written by a human, verified account, domain expert, open source, wikipedia)", // 156 // 169 // 174 // 211
     "(of importance, significant, crucial)", // 156 // 203
 ];
-// TODO: Model can be improved by finding more/better uncorrelated scam indicators.
+// TODO: Model can be improved by finding more/better uncorrelated fraud indicators.
 // Note: Any additional topic increases the model inference time!
 
 fn read_dataset(path: &str) -> anyhow::Result<Vec<(String,bool)>> {
@@ -70,7 +70,7 @@ pub fn create_training_data(dataset_paths: Vec<&str>,topics_output_path: &str) -
 
 
     sentiment::extract_sentiments(&dataset,Some(format!("sentiment_extract_sentiments_{}",topics_output_path))).unwrap();
-    language_model::extract_topics(&dataset,&SCAM_INDICATORS,Some(format!("language_model_extract_topics_{}",topics_output_path)))?;
+    language_model::extract_topics(&dataset,&FRAUD_INDICATORS,Some(format!("language_model_extract_topics_{}",topics_output_path)))?;
 
     Ok(())
 }

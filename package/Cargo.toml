@@ -1,35 +1,41 @@
 [package]
-name = "rust-scam-detection"
+name = "rust-fraud-detection"
 authors = ["Philipp Schlütermann <philipp.schluetermann@udo.edu>"]
-description = "robust scam detection using NLP topic extraction"
+description = "robust fraud detection using NLP topic extraction"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
 crate-type = ["rlib"]
 # https://doc.rust-lang.org/cargo/reference/cargo-targets.html
-name = "rust_scam_detection_tools"
+name = "rust_fraud_detection_tools"
 path = "src/lib.rs"
 
 [[bin]]
-name = "rust_scam_detection"
+name = "rust_fraud_detection"
 path = "src/main.rs"
 
 
 [dependencies]
-
-serde = "1.0"
+serde = {version = "1.0", features=["derive"]}
 serde_json = "1.0"
 anyhow = "1.0"
-itertools = "0.10.5"
-csv = "1.1"
-rust-bert = "0.19.0"
-smartcore = {version = "0.2.1", features=["serde"]}
-ndarray = "0.15.0"
-rand = "0.8.5"
-regex = "1.6.0"
-lazy_static = "1.4.0"
-words-count = "0.1.3"
+bincode = "1.3.3"
+itertools = {version = "0.10.5", optional=true}
+csv = {version = "1.1", optional=true}
+rust-bert = {version = "0.19.0", optional=true}
+smartcore = {version = "0.2.1", features=["serde"], optional=true}
+ndarray = {version = "0.15.0", optional=true}
+rand = {version = "0.8.5", optional=true}
+regex = {version = "1.6.0", optional=true}
+lazy_static = {version = "1.4.0", optional=true}
+words-count = {version = "0.1.3", optional=true}
 
 [features]
-default = []
+default = ["server"]
+server = ["rust-bert","smartcore","ndarray","rand","regex","lazy_static","words-count","itertools","csv"]
+# use
+# --no-default-features
+# or
+# default-features = false
+# to import `client_send_request` to interact (via sockets) with a running "server" instance.
