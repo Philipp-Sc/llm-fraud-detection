@@ -1,5 +1,5 @@
 [package]
-name = "rust-fraud-detection"
+name = "rust-bert-fraud-detection"
 authors = ["Philipp Schlütermann <philipp.schluetermann@udo.edu>"]
 description = "robust fraud detection using NLP topic extraction"
 version = "0.1.0"
@@ -8,11 +8,11 @@ edition = "2021"
 [lib]
 crate-type = ["rlib"]
 # https://doc.rust-lang.org/cargo/reference/cargo-targets.html
-name = "rust_fraud_detection_tools"
+name = "rust_bert_fraud_detection_tools"
 path = "src/lib.rs"
 
 [[bin]]
-name = "rust_fraud_detection"
+name = "rust_bert_fraud_detection"
 path = "src/main.rs"
 
 
