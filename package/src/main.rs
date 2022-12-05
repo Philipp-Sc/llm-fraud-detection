@@ -56,13 +56,10 @@ fn main_3() -> anyhow::Result<()> {
 }
 
 /*_training*/
-fn main_training() -> anyhow::Result<()> {
+fn main() -> anyhow::Result<()> {
 
-    let training_data_paths = ["data_gen_v1_(enronSpamSubset).json","data_gen_v1.json","data_gen_v1 (proposals).json"];
+    let training_data_paths = ["data_gen_v1_(enronSpamSubset).json","data_gen_v1.json","data_gen_v1_(proposals_all).json"];
     
-    // generate training data for the selected topics, also generates sentiments.
-    //rust_bert_fraud_detection_tools::build::create_training_data(vec![/*"./dataset/completeSpamAssassin.csv","./dataset/lingSpam.csv",*/"./dataset/enronSpamSubset.csv"],training_data_path)?;
-    //return Ok(());
     rust_bert_fraud_detection_tools::build::create_classification_model(&training_data_paths)?;
 
     println!("test with training data");    
@@ -76,7 +73,7 @@ fn main_training() -> anyhow::Result<()> {
     Ok(())
 }
 /*_generate_sentiments_and_topics*/
-fn main() -> anyhow::Result<()> {
+fn main_2() -> anyhow::Result<()> {
 
     let training_data_path = "data_gen_v1_(proposals_all).json";
     rust_bert_fraud_detection_tools::build::create_training_data(vec![/*"./dataset/completeSpamAssassin.csv","./dataset/lingSpam.csv","./dataset/enronSpamSubset.csv"*/"./dataset/proposals.csv"],training_data_path)?;
