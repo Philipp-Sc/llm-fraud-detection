@@ -1,12 +1,9 @@
-#[cfg(feature = "server")]
 pub mod build;
 
 pub mod service;
 
-#[cfg(feature = "server")]
 use crate::build::feature_engineering::get_features;
 
-#[cfg(feature = "server")]
 pub fn fraud_probabilities(texts: &[&str]/*, topics: &[&str]*/) ->  anyhow::Result<Vec<f64>> {
     // gets topic predictions
     let mut topic_predictions: Vec<Vec<f64>> = build::language_model::get_topic_predictions(texts,&build::FRAUD_INDICATORS)?;
