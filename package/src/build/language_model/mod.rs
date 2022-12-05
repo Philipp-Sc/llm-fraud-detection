@@ -6,6 +6,8 @@ use crate::build::feature_engineering::get_features;
 
 use std::sync::Arc;
 use std::sync::Mutex;
+use rand::seq::SliceRandom;
+use rand::thread_rng;
 
 lazy_static::lazy_static! {
         //    Set-up model
@@ -109,38 +111,20 @@ pub fn load_topics_from_file(paths: &[&str]) -> anyhow::Result<(Vec<Vec<f64>>,Ve
         }
     }
 
+    dataset.shuffle(&mut thread_rng());
+
     println!("len of dataset: {}",dataset.len());
 
-    let mut count_positive = 0;
-    let mut count_negative = 0;
 
     let mut x_dataset: Vec<Vec<f64>> = Vec::new();
     let mut y_dataset: Vec<f64> = Vec::new();
     for each in &dataset {
-        if each.1.1 {
-            count_positive +=1;
+        // adding custom features
+        let mut new_list = each.0.clone();
+        new_list.append(&mut get_features(each.1.0.to_owned()));
 
-            // adding custom features
-            let mut new_list = each.0.clone();
-            new_list.append(&mut get_features(each.1.0.to_owned()));
-
-            x_dataset.push(new_list);
-            y_dataset.push(if each.1.1 { 1.0 } else { 0.0 });
-        }
-    }
-    for each in &dataset {
-        if !each.1.1 {
-            if count_negative < count_positive {
-                count_negative +=1;
-
-                // adding custom features
-                let mut new_list = each.0.clone();
-                new_list.append(&mut get_features(each.1.0.to_owned()));
-
-                x_dataset.insert(count_positive-count_negative,new_list);
-                y_dataset.insert(count_positive-count_negative,if each.1.1 { 1.0 } else { 0.0 });
-            }
-        }
+        x_dataset.push(new_list);
+        y_dataset.push(if each.1.1 { 1.0 } else { 0.0 });
     }
 
     assert_eq!(x_dataset.len(),y_dataset.len());
