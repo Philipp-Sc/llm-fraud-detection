@@ -25,7 +25,7 @@ pub const SENTENCES: [&str;6] = [
 //          sudo docker stop CONTAINER_ID
 // Run service test:
 //      sudo docker run -it --rm -v "$(pwd)/rustbert_cache":/usr/rustbert_cache -v "$(pwd)/target":/usr/target -v "$(pwd)/cargo_home":/usr/cargo_home -v "$(pwd)/package":/usr/workspace -v "$(pwd)/tmp":/usr/workspace/tmp -v "$(pwd)/socket_ipc":/usr/socket_ipc rust-bert-fraud-detection cargo run --release test_service
-fn main() -> anyhow::Result<()> {
+fn main_3() -> anyhow::Result<()> {
 
     let args: Vec<String> = env::args().collect();
     println!("env::args().collect(): {:?}",args);
@@ -55,9 +55,10 @@ fn main() -> anyhow::Result<()> {
     }
 }
 
+/*_training*/
 fn main_training() -> anyhow::Result<()> {
 
-    let training_data_paths = ["data_gen_v1_(enronSpamSubset).json","data_gen_v1.json"];
+    let training_data_paths = ["data_gen_v1_(enronSpamSubset).json","data_gen_v1.json","data_gen_v1 (proposals).json"];
     
     // generate training data for the selected topics, also generates sentiments.
     //rust_bert_fraud_detection_tools::build::create_training_data(vec![/*"./dataset/completeSpamAssassin.csv","./dataset/lingSpam.csv",*/"./dataset/enronSpamSubset.csv"],training_data_path)?;
@@ -73,4 +74,12 @@ fn main_training() -> anyhow::Result<()> {
     println!("Predictions:\n{:?}",fraud_probabilities);
     println!("Labels:\n[1.0, 0.0, 1.0, 0.0, 1.0, 0.0]");
     Ok(())
+}
+/*_generate_sentiments_and_topics*/
+fn main() -> anyhow::Result<()> {
+
+    let training_data_path = "data_gen_v1_(proposals_all).json";
+    rust_bert_fraud_detection_tools::build::create_training_data(vec![/*"./dataset/completeSpamAssassin.csv","./dataset/lingSpam.csv","./dataset/enronSpamSubset.csv"*/"./dataset/proposals.csv"],training_data_path)?;
+    return Ok(());
+
 }

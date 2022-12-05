@@ -19,7 +19,11 @@ pub const FRAUD_INDICATORS: [&str;7] = [
 fn read_dataset(path: &str) -> anyhow::Result<Vec<(String,bool)>> {
 
     let (text_index,label_index) = if !path.contains("enron") {
-        (1,2)
+        if path.contains("proposals") {
+            (0,1)
+        }else {
+            (1,2)
+        }
     }else{
         (2,3)
     };
@@ -62,14 +66,17 @@ pub fn create_training_data(dataset_paths: Vec<&str>,topics_output_path: &str) -
     println!("count ham: {:?}", dataset.iter().filter(|x| !x.1).count());
 
     let indices_spam: Vec<usize> = dataset.iter().enumerate().filter(|(i,x)| x.1).map(|(i,_)| i).collect();
-    let indices_spam_ham: Vec<usize> = dataset.iter().enumerate().filter(|(i,x)| !x.1).take(indices_spam.len()).map(|(i,_)| i).collect();
-    let dataset: Vec<(String,bool)> = vec![indices_spam.iter().map(|&i| &dataset[i]).collect::<Vec<&(String,bool)>>(),indices_spam_ham.iter().map(|&i| &dataset[i]).collect::<Vec<&(String,bool)>>()].into_iter().flatten().map(|x| x.clone()).collect();
+    let indices_spam_ham: Vec<usize> = dataset.iter().enumerate().filter(|(i,x)| !x.1)/*.take(indices_spam.len())*/.map(|(i,_)| i).collect();
+    let dataset: Vec<(String,bool)> = vec![
+        indices_spam.iter().map(|&i| &dataset[i]).collect::<Vec<&(String,bool)>>(),
+        indices_spam_ham.iter().map(|&i| &dataset[i]).collect::<Vec<&(String,bool)>>()
+    ].into_iter().flatten().map(|x| x.clone()).collect();
 
 
     println!("len dataset: {:?}", dataset.iter().count());
 
 
-    sentiment::extract_sentiments(&dataset,Some(format!("sentiment_extract_sentiments_{}",topics_output_path))).unwrap();
+    sentiment::extract_sentiments(&dataset,Some(format!("sentiment_extract_sentiments_{}",topics_output_path)))?;
     language_model::extract_topics(&dataset,&FRAUD_INDICATORS,Some(format!("language_model_extract_topics_{}",topics_output_path)))?;
 
     Ok(())
