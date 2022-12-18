@@ -1,4 +1,7 @@
 use serde::{Deserialize, Serialize};
+use std::hash::Hash;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::Hasher;
 
 pub mod socket;
 
@@ -10,10 +13,18 @@ pub fn client_send_rust_bert_fraud_detection_request(socket_path: &str, texts: V
     client_send_request(socket_path,RustBertFraudDetectionRequest{texts})
 }
 
-#[derive(Serialize,Deserialize,Debug)]
+#[derive(Serialize,Deserialize,Debug,Hash,Clone)]
 pub struct RustBertFraudDetectionRequest {
     pub texts: Vec<String>,
 }
+impl RustBertFraudDetectionRequest {
+    pub fn get_hash(&self) -> u64 {
+        let mut hasher = DefaultHasher::new();
+        self.hash(&mut hasher);
+        hasher.finish()
+    }
+}
+
 
 
 impl TryFrom<Vec<u8>> for RustBertFraudDetectionRequest {
@@ -30,7 +41,7 @@ impl TryFrom<RustBertFraudDetectionRequest> for Vec<u8> {
     }
 }
 
-#[derive(Serialize,Deserialize,Debug)]
+#[derive(Serialize,Deserialize,Debug,Clone)]
 pub struct RustBertFraudDetectionResult {
     pub fraud_probabilities: Vec<f64>,
 }

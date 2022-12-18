@@ -4,62 +4,58 @@ pub mod language_model;
 pub mod feature_engineering;
 pub mod sentiment;
 
-pub const FRAUD_INDICATORS: [&str;7] = [
-    "(clickbait, suspected spam, fake news)", // 2122 // 1663 // 1697 // 1726
-    "(untrustworthy, not to be trusted, unreliable source, blacklisted)", // 191 // 215 // 238 // 260
-    "(call to immediate action)", // 160 // 211 // 224 // 244
-    "(aggressive marketing, advertising, selling, promotion, authoritative, commanding)", // 175 // 202 // 207 // 229
-    "(giveaway, tokens, airdrops, rewards, gratis, claim now)", // 145 // 205 // 189 // 209
-    "(written by a human, verified account, domain expert, open source, wikipedia)", // 156 // 169 // 174 // 211
-    "(of importance, significant, crucial)", // 156 // 203
-];
-/*
-(misleading, deceptive, false, untruthful)
-(scam, fraudulent, illegitimate)
-(phishing, hacking, malware, ransomware)
-(suspicious, questionable, dubious)
-(bias, propaganda, spin, fake news)
-(spam, junk, unsolicited)
-(clickbait, sensationalism, hype)
-(unexpected, unusual behavior)
-(inconsistent, conflicting information)
-(red flags)
-(false endorsements, testimonials)
-(fake websites, domains)
-(fake profiles, accounts)
-(forged documents, signatures)
-(identity theft, impersonation)
-(money laundering, tax evasion)
-(bribery, corruption, influence peddling)
-(insider trading, market manipulation)
-(account takeover, unauthorized access)
-(denial of service attacks, cyber attacks)
-(bogus offers, scams)
-(fake reviews, ratings, feedback)
-
-    Misleading or deceptive information: The product advertisement made false claims about the benefits of the product.
-    Scams or fraudulent activity: The email was a scam asking for personal information and bank account details.
-    Phishing, hacking, or other cyber attacks: The website asked for login information and then locked the user out of their account.
-    Suspicious or questionable behavior: The account activity showed sudden, large transactions with no apparent reason.
-    Bias, propaganda, or fake news: The news article was biased and contained false information.
-    Spam or unsolicited content: The user received a large number of unsolicited emails from unknown senders.
-    Clickbait or sensationalist headlines: The article had a sensationalist headline that didn't match the content of the article.
-    Unexpected or unusual behavior: The user's account showed unusual patterns of activity, such as multiple login attempts from different locations.
-    Inconsistent or conflicting information: The user provided different addresses and phone numbers in different transactions.
-    Red flags or other indicators of potential fraud: The user received a large number of returned or declined transactions.
-    False endorsements or testimonials: The product had fake endorsements from celebrities who had never actually used it.
-    Fake websites or domains: The website looked like a legitimate company's website, but was actually a fake designed to trick users.
-    Fake profiles or accounts: The social media profile was fake and used to impersonate a real person.
-    Forged documents or signatures: The contract had a forged signature and was not valid.
-    Identity theft or impersonation: The user's identity was stolen and used to open new accounts and make transactions.
-    Money laundering or tax evasion: The company was involved in money laundering to hide illegal activity.
-    Bribery, corruption, or influence peddling: The politician accepted bribes in exchange for favorable treatment.
-    Insider trading or market manipulation: The company insider traded on non-public information to make a profit.
-    Unauthorized access or account takeover: The hacker gained access to the user's account and made unauthorized transactions.
-    Denial of service attacks or other cyber attacks: The website was attacked and became unavailable for users.
-    Bogus offers or scams: The user received an offer for a free vacation that turned out to be a scam.
-    Fake reviews, ratings, or feedback: The product had fake positive reviews that were not from real customers.
-*/
+pub const FRAUD_INDICATORS: [&str; 51] = [
+    "(clickbait, suspected spam, fake news)",
+    "(untrustworthy, not to be trusted, unreliable source, blacklisted)",
+    "(call to immediate action)",
+    "(aggressive marketing, advertising, selling, promotion, authoritative, commanding)",
+    "(giveaway, tokens, airdrops, rewards, gratis, claim now)",
+    "(written by a human, verified account, domain expert, open source, wikipedia)",
+    "(of importance, significant, crucial)",
+    "(misleading, deceptive, false, untruthful)",
+    "(scam, fraudulent, illegitimate)",
+    "(phishing, hacking, malware, ransomware)",
+    "(suspicious, questionable, dubious)",
+    "(bias, propaganda, spin, fake news)",
+    "(spam, junk, unsolicited)",
+    "(clickbait, sensationalism, hype)",
+    "(unexpected, unusual behavior)",
+    "(inconsistent, conflicting information)",
+    "(red flags)",
+    "(false endorsements, testimonials)",
+    "(fake websites, domains)",
+    "(fake profiles, accounts)",
+    "(forged documents, signatures)",
+    "(identity theft, impersonation)",
+    "(money laundering, tax evasion)",
+    "(bribery, corruption, influence peddling)",
+    "(insider trading, market manipulation)",
+    "(account takeover, unauthorized access)",
+    "(denial of service attacks, cyber attacks)",
+    "(bogus offers, scams)",
+    "(fake reviews, ratings, feedback)",
+    "Misleading or deceptive information: The product advertisement made false claims about the benefits of the product.",
+    "Scams or fraudulent activity: The email was a scam asking for personal information and bank account details.",
+    "Phishing, hacking, or other cyber attacks: The website asked for login information and then locked the user out of their account.",
+    "Suspicious or questionable behavior: The account activity showed sudden, large transactions with no apparent reason.",
+    "Bias, propaganda, or fake news: The news article was biased and contained false information.",
+    "Spam or unsolicited content: The user received a large number of unsolicited emails from unknown senders.",
+    "Clickbait or sensationalist headlines: The article had a sensationalist headline that didn't match the content of the article.",
+    "Unexpected or unusual behavior: The user's account showed unusual patterns of activity, such as multiple login attempts from different locations.",
+    "Inconsistent or conflicting information: The user provided different addresses and phone numbers in different transactions.",
+    "Red flags or other indicators of potential fraud: The user received a large number of returned or declined transactions.",
+    "False endorsements or testimonials: The product had fake endorsements from celebrities who had never actually used it.",
+    "Fake websites or domains: The website looked like a legitimate company's website, but was actually a fake designed to trick users.",
+    "Fake profiles or accounts: The social media profile was fake and used to impersonate a real person.",
+    "Forged documents or signatures: The contract had a forged signature and was not valid.",
+    "Identity theft or impersonation: The user's identity was stolen and used to open new accounts and make transactions.",
+    "Money laundering or tax evasion: The company was involved in money laundering to hide illegal activity.",
+    "Bribery, corruption, or influence peddling: The politician accepted bribes in exchange for favorable treatment.",
+    "Insider trading or market manipulation: The company insider traded on non-public information to make a profit.",
+    "Unauthorized access or account takeover: The hacker gained access to the user's account and made unauthorized transactions.",
+    "Denial of service attacks or other cyber attacks: The website was attacked and became unavailable for users.",
+    "Bogus offers or scams: The user received an offer for a free vacation that turned out to be a scam.",
+    "Fake reviews, ratings, or feedback: The product had fake positive reviews that were not from real customers."];
 
 
 // TODO: Model can be improved by finding more/better uncorrelated fraud indicators.
