@@ -16,7 +16,6 @@ pub const FRAUD_INDICATORS: [&str;10] = [
 "(giveaway, tokens, airdrops, rewards, gratis, claim now)",  
 "(to hide illegal activity)" ];
 
-// TODO: Model can be improved by finding more/better uncorrelated fraud indicators.
 // Note: Any additional topic increases the model inference time!
 
 fn read_dataset(path: &str) -> anyhow::Result<Vec<(String,bool)>> {
