@@ -11,8 +11,9 @@ Robust semi-supervised fraud detection using Rust native NLP pipelines.
 **rust-bert-fraud-detection** uses the NLP pipelines from [rust-bert](https://github.com/guillaume-be/rust-bert) to extract topics and sentiment from the given text. A simple [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) is trained to predict fraud/ham. The training data is generated from the [LingSpam, EnronSpam and Spam Assassin Dataset](https://www.kaggle.com/datasets/nitishabharathi/email-fraud-dataset) containing ham and fraud email. Since the [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) is trained on latent features ([topics/fraud indicators](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/mod.rs)) and NOT on a text encoding (such as Bag of Words) much less datapoints are needed to generate an accurate model.
 # 
 This project is part of [CosmosRustBot](https://github.com/Philipp-Sc/cosmos-rust-bot), which provides Governance Proposal Notifications for Cosmos Blockchains. To detect fake & fraud proposals **rust-bert-fraud-detection** was created. Since **rust-bert-fraud-detection** is semi-supervised it is works accross different domains, even though the [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) was trained only on a fraud/ham email dataset.
+Recently trainig data from Governance Proposals of Cosmos Blockchains were added, to further improve the accuracy.
 #
-Note that the language models used by [rust-bert](https://github.com/guillaume-be/rust-bert) are in the order of the 100s of MBs to GBs. This impacts the hardware requirements and model inference time.
+Note that the language models used by [rust-bert](https://github.com/guillaume-be/rust-bert) are in the order of the 100s of MBs to GBs. This impacts the hardware requirements and model inference time. A GPU Setup is recommended.
 # Use
 
 Add to your `Cargo.toml` manifest:
@@ -43,8 +44,8 @@ fn main() -> anyhow::Result<()> {
 }
 
 ```
-```
-[0.9183035714285714, 0.6243303571428571, 0.9877232142857143, 0.5344494047619046, 0.9184523809523809, 0.6588541666666666]
+``` 
+[1.0, 0.38943452380952387, 0.9208333333333334, 0.47150297619047615, 0.9265624999999998, 0.2607142857142857]
 [1.0, 0.0, 1.0, 0.0, 1.0, 0.0]
 ```
 # Model Performance
