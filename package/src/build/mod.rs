@@ -78,7 +78,7 @@ pub fn create_training_data(dataset_paths: Vec<&str>,topics_output_path: &str) -
     println!("len dataset: {:?}", dataset.iter().count());
 
 
-    //sentiment::extract_sentiments(&dataset,Some(format!("sentiment_extract_sentiments_{}",topics_output_path)))?;
+    sentiment::extract_sentiments(&dataset,Some(format!("sentiment_extract_sentiments_{}",topics_output_path)))?;
     language_model::extract_topics(&dataset,&FRAUD_INDICATORS,Some(format!("language_model_extract_topics_{}",topics_output_path)))?;
 
     Ok(())
@@ -88,7 +88,7 @@ pub fn create_classification_model(paths: &[&str]) -> anyhow::Result<()> {
 
     let (mut x_dataset, y_dataset): (Vec<Vec<f64>>,Vec<f64>) = language_model::load_topics_from_file(paths)?;
     let (x_dataset_sentiment,_) = sentiment::load_sentiments_from_file(paths)?;
-//    assert_eq!(x_dataset.len(),x_dataset_sentiment.len());
+    assert_eq!(x_dataset.len(),x_dataset_sentiment.len());
     for i in 0..x_dataset.len() {
         x_dataset[i].push(x_dataset_sentiment[i]);
     }
@@ -102,7 +102,7 @@ pub fn test_classification_model(paths: &[&str]) -> anyhow::Result<()> {
 
     let (mut x_dataset, y_dataset): (Vec<Vec<f64>>,Vec<f64>) = language_model::load_topics_from_file(paths)?;
     let (x_dataset_sentiment,_) = sentiment::load_sentiments_from_file(paths)?;
-//    assert_eq!(x_dataset.len(),x_dataset_sentiment.len());
+    assert_eq!(x_dataset.len(),x_dataset_sentiment.len());
     for i in 0..x_dataset.len() {
         x_dataset[i].push(x_dataset_sentiment[i]);
     }
