@@ -6,8 +6,6 @@ use crate::build::feature_engineering::get_features;
 
 use std::sync::Arc;
 use std::sync::Mutex;
-use rand::seq::SliceRandom;
-use rand::thread_rng;
 
 lazy_static::lazy_static! {
         //    Set-up model
@@ -63,72 +61,102 @@ pub fn extract_topics(dataset: &Vec<(String,bool)>, topics: &[&str], path: Optio
     Ok(outputs)
 }
 
-pub fn load_topics_from_file(paths: &[&str]) -> anyhow::Result<(Vec<Vec<f64>>,Vec<f64>)> {
+// This function takes a list of file paths as input, loads the predicted values and labels
+// from each file, creates a dataset by combining the predicted values and labels,
+// and returns a tuple containing the dataset and the corresponding labels.
 
+pub fn load_topics_from_file(paths: &[&str]) -> anyhow::Result<(Vec<Vec<f64>>, Vec<f64>)> {
+
+    // Initialize an empty vector to store the predicted values for each path.
     let mut list_sequence_classification_multi_label_prediction: Vec<serde_json::Value> = Vec::new();
-    for path in paths { 
-    let sequence_classification_multi_label_prediction: serde_json::Value = match fs::read_to_string(format!("language_model_extract_topics_{}",path)) {
-        Ok(file) => {
-            match serde_json::from_str(&file) {
-                Ok(res) => {
-                    res
-                }
-                Err(err) => {
-                    println!("{:?}", err);
-                    Default::default()
+
+    // Iterate through each path provided.
+    for path in paths {
+        // Read the contents of a file that is expected to be present in the directory
+        // named "language_model_extract_topics_<path>".
+        let sequence_classification_multi_label_prediction: serde_json::Value = match fs::read_to_string(format!("language_model_extract_topics_{}", path)) {
+            // If the file exists and its contents can be parsed as JSON, parse the JSON value
+            // and append it to the list_sequence_classification_multi_label_prediction vector.
+            Ok(file) => {
+                match serde_json::from_str(&file) {
+                    Ok(res) => {
+                        res
+                    }
+                    // If parsing the JSON value fails, print the error and append a default value
+                    // to the list_sequence_classification_multi_label_prediction vector.
+                    Err(err) => {
+                        println!("{:?}", err);
+                        Default::default()
+                    }
                 }
             }
-        }
-        Err(err) => {
-            println!("{:?}", err);
-            Default::default()
-        }
-    };
-    list_sequence_classification_multi_label_prediction.push(sequence_classification_multi_label_prediction);
+            // If the file cannot be read, print the error and append a default value
+            // to the list_sequence_classification_multi_label_prediction vector.
+            Err(err) => {
+                println!("{:?}", err);
+                Default::default()
+            }
+        };
+
+        // Append the sequence_classification_multi_label_prediction value to the vector.
+        list_sequence_classification_multi_label_prediction.push(sequence_classification_multi_label_prediction);
     }
 
+    // Initialize two empty vectors to store the predicted values and labels.
     let mut predictions: Vec<Vec<f64>> = Vec::new();
-    let mut labels: Vec<(String,bool)> = Vec::new();
+    let mut labels: Vec<(String, bool)> = Vec::new();
 
+    // Iterate through each element of the list_sequence_classification_multi_label_prediction vector.
     for sequence_classification_multi_label_prediction in list_sequence_classification_multi_label_prediction {
-    for list_p in sequence_classification_multi_label_prediction["predictions"].as_array().unwrap(){
-        predictions.push(list_p.as_array().unwrap().into_iter().map(|x| x.as_f64().unwrap()).collect());
-    }
-    for each in sequence_classification_multi_label_prediction["dataset"].as_array().unwrap() {
-        let entry = each.as_array().unwrap();
-        labels.push((entry[0].as_str().unwrap().to_string(),entry[1].as_bool().unwrap()));
+        // Extract the predicted values and append them to the predictions vector.
+        for list_p in sequence_classification_multi_label_prediction["predictions"].as_array().unwrap() {
+            predictions.push(list_p.as_array().unwrap().into_iter().map(|x| x.as_f64().unwrap()).collect());
+        }
+        // Extract the labels and append them to the labels vector as tuples.
+        for each in sequence_classification_multi_label_prediction["dataset"].as_array().unwrap() {
+            let entry = each.as_array().unwrap();
+            labels.push((entry[0].as_str().unwrap().to_string(), entry[1].as_bool().unwrap()));
+        }
     }
 
-    }
-    println!("len of predictions: {}",predictions.len());
-    println!("len of labels: {}",labels.len());
-    assert_eq!(predictions.len(),labels.len());
+    // Print the lengths of the predictions and labels vectors and assert that they are equal.
+    println!("len of predictions: {}", predictions.len());
+    println!("len of labels: {}", labels.len());
+    assert_eq!(predictions.len(), labels.len());
 
-    let mut dataset: Vec<(&Vec<f64>,&(String,bool))> = Vec::new();
+    // Create a dataset by combining the predicted values and labels and filtering out
+    // any labels with a string value of "empty".
+    let mut dataset: Vec<(&Vec<f64>, &(String, bool))> = Vec::new();
     for i in 0..predictions.len() {
         if labels[i].0 != "empty" {
-            dataset.push((&predictions[i],&labels[i]));
+            dataset.push((&predictions[i], &labels[i]));
         }
     }
 
-    dataset.shuffle(&mut thread_rng());
-
+    // Print the length of the dataset.
     println!("len of dataset: {}",dataset.len());
 
-
+    // Initialize empty vectors to hold the new features and labels.
     let mut x_dataset: Vec<Vec<f64>> = Vec::new();
     let mut y_dataset: Vec<f64> = Vec::new();
+
+    // Loop through each item in the dataset.
     for each in &dataset {
-        // adding custom features
+        // Create a new list by cloning the existing features and appending custom features.
         let mut new_list = each.0.clone();
         new_list.append(&mut get_features(each.1.0.to_owned()));
 
+        // Add the new features to the x_dataset vector and add the corresponding label to the y_dataset vector.
         x_dataset.push(new_list);
         y_dataset.push(if each.1.1 { 1.0 } else { 0.0 });
     }
 
+    // Check that the x_dataset and y_dataset vectors have the same length.
     assert_eq!(x_dataset.len(),y_dataset.len());
+
+    // Print the length of the x_dataset and y_dataset vectors.
     println!("len of x_dataset / y_dataset: {}",y_dataset.len());
 
+    // Return the x_dataset and y_dataset vectors as a tuple wrapped in an Ok Result.
     Ok((x_dataset,y_dataset))
 }

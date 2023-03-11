@@ -2,8 +2,6 @@ use rust_bert::pipelines::sentiment::SentimentModel;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::fs;
-use rand::seq::SliceRandom;
-use rand::thread_rng;
 
 lazy_static::lazy_static! {
         static ref SENTIMENT_CLASSIFIER: Arc<Mutex<SentimentModel>> = Arc::new(Mutex::new(SentimentModel::new(Default::default()).unwrap()));
@@ -59,30 +57,42 @@ pub fn get_sentiment(text: &str) -> f64 {
     }
 }
 
+// This function loads sentiment data from files and returns two vectors, one for predictions and one for labels.
 pub fn load_sentiments_from_file(paths: &[&str]) -> anyhow::Result<(Vec<f64>,Vec<f64>)> {
-
+    // Initialize an empty vector to store the predicted values for each path.
     let mut list_sentiment_classifier_prediction: Vec<serde_json::Value> = Vec::new();
+    // Iterate through each path provided.
+
     for path in paths {
+        // Read the contents of a file that is expected to be present in the directory
+        // named "sentiment_extract_sentiments_<path>".
     let sentiment_classifier_prediction: serde_json::Value = match fs::read_to_string(format!("sentiment_extract_sentiments_{}",path)) {
+        // If the file exists and its contents can be parsed as JSON, parse the JSON value
+        // and append it to the list_sentiment_classifier_prediction vector.
         Ok(file) => {
             match serde_json::from_str(&file) {
                 Ok(res) => {
                     res
                 }
+                // If parsing the JSON value fails, print the error and append a default value
+                // to the list_sentiment_classifier_prediction vector.
                 Err(err) => {
                     println!("{:?}", err);
                     Default::default()
                 }
             }
         }
+        // If the file cannot be read, print the error and append a default value
+        // to the list_sentiment_classifier_prediction vector.
         Err(err) => {
             println!("{:?}", err);
             Default::default()
         }
     };
+        // Append the sentiment_classifier_prediction value to the vector.
     list_sentiment_classifier_prediction.push(sentiment_classifier_prediction);
     }
-
+    // Initialize two empty vectors to store the predicted values and labels.
     let mut predictions: Vec<f64> = Vec::new();
     let mut labels: Vec<(String,bool)> = Vec::new();
 
@@ -107,8 +117,6 @@ pub fn load_sentiments_from_file(paths: &[&str]) -> anyhow::Result<(Vec<f64>,Vec
             dataset.push((&predictions[i],&labels[i]));
         }
     }
-
-    dataset.shuffle(&mut thread_rng());
 
     println!("len of dataset: {}",dataset.len());
 

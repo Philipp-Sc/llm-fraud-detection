@@ -17,6 +17,7 @@ pub fn fraud_probabilities(texts: &[&str]/*, topics: &[&str]*/) ->  anyhow::Resu
         topic_predictions[i].push(sentiment_predictions[i]);
     }
 
+
     build::classification::predict(&topic_predictions)
 }
 
