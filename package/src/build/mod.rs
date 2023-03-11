@@ -1,4 +1,7 @@
 use std::fs::File;
+use rand::seq::SliceRandom;
+use rand::thread_rng;
+
 pub mod classification;
 pub mod language_model;
 pub mod feature_engineering;
@@ -93,7 +96,22 @@ pub fn create_classification_model(paths: &[&str]) -> anyhow::Result<()> {
         x_dataset[i].push(x_dataset_sentiment[i]);
     }
 
-    classification::update_linear_regression_model(&x_dataset,&y_dataset)?;
+    // create an index array
+    let mut idx: Vec<usize> = (0..x_dataset.len()).collect();
+
+    // shuffle the index array using the thread_rng() random number generator
+    idx.shuffle(&mut thread_rng());
+
+    // use the shuffled index array to reorder both datasets at once
+    let mut x_dataset_shuffled = Vec::with_capacity(x_dataset.len());
+    let mut y_dataset_shuffled = Vec::with_capacity(y_dataset.len());
+
+    for i in idx {
+        x_dataset_shuffled.push(x_dataset[i].clone());
+        y_dataset_shuffled.push(y_dataset[i].clone());
+    }
+
+    classification::update_linear_regression_model(&x_dataset_shuffled,&y_dataset_shuffled)?;
     //classification::test_linear_regression_model(&x_dataset,&y_dataset)?;
 
     Ok(())
