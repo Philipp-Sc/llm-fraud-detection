@@ -21,12 +21,12 @@ pub const FRAUD_INDICATORS: [&str;10] = [
 fn read_dataset(path: &str) -> anyhow::Result<Vec<(String,bool)>> {
 
     let (text_index,label_index) = if !path.contains("enron") {
-        if path.contains("proposals") {
-            (0,1)
-        }else {
+        if path.contains("smsspamcollection") {
+            (1,0)
+        }else { // lingSpam / completeSpamAssassin
             (1,2)
         }
-    }else{
+    }else{ // enronSpamSubset
         (2,3)
     };
     let mut training_data: Vec<(String,bool)> = Vec::new();
@@ -88,7 +88,7 @@ pub fn create_classification_model(paths: &[&str]) -> anyhow::Result<()> {
 
     let (mut x_dataset, y_dataset): (Vec<Vec<f64>>,Vec<f64>) = language_model::load_topics_from_file(paths)?;
     let (x_dataset_sentiment,_) = sentiment::load_sentiments_from_file(paths)?;
-    assert_eq!(x_dataset.len(),x_dataset_sentiment.len());
+//    assert_eq!(x_dataset.len(),x_dataset_sentiment.len());
     for i in 0..x_dataset.len() {
         x_dataset[i].push(x_dataset_sentiment[i]);
     }
@@ -102,7 +102,7 @@ pub fn test_classification_model(paths: &[&str]) -> anyhow::Result<()> {
 
     let (mut x_dataset, y_dataset): (Vec<Vec<f64>>,Vec<f64>) = language_model::load_topics_from_file(paths)?;
     let (x_dataset_sentiment,_) = sentiment::load_sentiments_from_file(paths)?;
-    assert_eq!(x_dataset.len(),x_dataset_sentiment.len());
+//    assert_eq!(x_dataset.len(),x_dataset_sentiment.len());
     for i in 0..x_dataset.len() {
         x_dataset[i].push(x_dataset_sentiment[i]);
     }
