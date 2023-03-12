@@ -48,7 +48,30 @@ fn main() -> anyhow::Result<()> {
 [1.0, 0.38943452380952387, 0.9208333333333334, 0.47150297619047615, 0.9265624999999998, 0.2607142857142857]
 [1.0, 0.0, 1.0, 0.0, 1.0, 0.0]
 ```
-# Model Performance
+# Training Data
+```
+enronSpamSubset.csv
+---------------
+count spam: 5000
+count ham: 5000
+
+lingSpam.csv
+---------------
+count spam: 433
+count ham: 2172
+
+completeSpamAssassin.csv
+--------------- 
+ 
+smsspamcollection.csv 
+--------------- 
+
+governance_proposal_spam_ham.csv 
+--------------- 
+
+```
+# Model Performance 
+
 ```len of x_dataset / y_dataset: 13986``` (LingSpam, EnronSpam and Spam Assassin Dataset)
 ``` 
 true p(>=0.4)==label 13319
