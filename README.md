@@ -62,6 +62,8 @@ count ham: 2172
 
 completeSpamAssassin.csv
 --------------- 
+count spam: 1896
+count ham: 4150
  
 smsspamcollection.csv 
 --------------- 
