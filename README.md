@@ -64,12 +64,19 @@ completeSpamAssassin.csv
 --------------- 
 count spam: 1896
 count ham: 4150
+
+youtubeSpamCollection.csv
+---------------
+total: 1962
  
 smsspamcollection.csv 
 --------------- 
+count spam: 747
+count ham: 4825
 
 governance_proposal_spam_ham.csv 
 --------------- 
+total: 806
 
 ```
 # Model Performance 
