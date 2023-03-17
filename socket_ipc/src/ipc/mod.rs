@@ -9,7 +9,7 @@ use socket::{client_send_request, Handler, spawn_socket_service};
 
 
 pub fn client_send_rust_bert_fraud_detection_request(socket_path: &str, texts: Vec<String>) -> anyhow::Result<RustBertFraudDetectionResult> {
-    println!("client_send_request initiating");
+    println!("Sending request to RustBert Fraud Detection service at {}",socket_path);
     client_send_request(socket_path,RustBertFraudDetectionRequest{texts})
 }
 

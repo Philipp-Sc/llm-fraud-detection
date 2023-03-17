@@ -21,9 +21,9 @@ pub fn load_store(path: &str) -> HashValueStore {
 }
 
 pub fn spawn_rust_bert_fraud_detection_socket_service(socket_path: &str) -> JoinHandle<()> {
-    println!("spawn_socket_service startup");
+    println!("Starting RustBert Fraud Detection socket service on {}...", socket_path);
     let task = spawn_socket_service(socket_path,Box::new(RustBertFraudHandler{}) as Box<dyn Handler + Send>);
-    println!("spawn_socket_service ready");
+    println!("RustBert Fraud Detection socket service is ready and listening for incoming requests.");
     task
 }
 pub struct RustBertFraudHandler
@@ -34,6 +34,8 @@ impl Handler for RustBertFraudHandler
 {
     fn process(&self, bytes: Vec<u8>) -> anyhow::Result<Vec<u8>> {
 
+        println!("Processing request for RustBert Fraud Detection...");
+
         let request: RustBertFraudDetectionRequest = bytes.try_into()?;
 
         let hash = request.get_hash();
@@ -41,6 +43,7 @@ impl Handler for RustBertFraudHandler
         if FRAUD_DETECTION_STORE.contains_hash(hash)? {
             let val = FRAUD_DETECTION_STORE.get_item_by_hash::<RustBertFraudDetectionResult>(hash)?.unwrap();
             let result: Vec<u8> = val.try_into()?;
+            println!("Found cached result for hash {}.", hash);
             Ok(result)
         } else {
             let fraud_probabilities: Vec<f64> = fraud_probabilities(&request.texts.iter().map(|x| x.as_str()).collect::<Vec<&str>>()[..])?;
@@ -49,6 +52,7 @@ impl Handler for RustBertFraudHandler
             FRAUD_DETECTION_STORE.insert_item(hash,val.clone()).ok();
 
             let result: Vec<u8> = val.try_into()?;
+            println!("Calculated new result for hash {}.", hash);
             Ok(result)
         }
     }
