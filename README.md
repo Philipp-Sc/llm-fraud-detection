@@ -45,7 +45,7 @@ fn main() -> anyhow::Result<()> {
 
 ```
 ``` 
-[1.0, 0.38943452380952387, 0.9208333333333334, 0.47150297619047615, 0.9265624999999998, 0.2607142857142857]
+[0.8911458333333334, 0.1259672619047619, 0.5364583333333331, 0.0984375, 0.8971354166666666, 0.27120535714285715]
 [1.0, 0.0, 1.0, 0.0, 1.0, 0.0]
 ```
 # Training Data
@@ -61,61 +61,85 @@ count spam: 433
 count ham: 2172
 
 completeSpamAssassin.csv
---------------- 
+---------------
 count spam: 1560
 count ham: 3952
 
 youtubeSpamCollection.csv
 ---------------
-total: 1962
+count spam: 1005
+count ham: 957
  
 smsspamcollection.csv 
---------------- 
+---------------
 count spam: 747
 count ham: 4825
 
 governance_proposal_spam_ham.csv 
---------------- 
-total: 806
+---------------
+count spam: 26
+count ham: 780
+
+TOTAL SPAM: 8771
+TOTAL HAM: 17686
 
 ```
 # Model Performance 
 
-```len of x_dataset / y_dataset: 13986``` (LingSpam, EnronSpam and Spam Assassin Dataset)
-``` 
-true p(>=0.4)==label 13319
-false 667
-false positive 575
-
-true p(>=0.5)==label 13428
-false 558
-false positive 218
-
-true p(>=0.6)==label 13112
-false 874
-false positive 66
-
-true p(>=0.7)==label 12372
-false 1614
-false positive 5
-
-true p(>=0.8)==label 11311
-false 2675
-false positive 0
-
-true p(>=0.9)==label 9898
-false 4088
-false positive 0
 ```
-- p(>=0.5) has the best performance (95%).
-- p(>=0.7) has the fewest **false positives** and a performance of 87%.
+Trained and tested with
+---------------
+count spam: 7766
+count ham: 16729
+``` 
+```
+true p(>=0.1)==label 19847
+false 4646
+false positive 4646
 
-If you are okay with few fraud emails not classified as fraud, but don't want any ham email classified as fraud, select the later.
+true p(>=0.2)==label 22703
+false 1790
+false positive 1788
+
+true p(>=0.3)==label 23725
+false 768
+false positive 747
+
+true p(>=0.4)==label 24067
+false 426
+false positive 288
+
+true p(>=0.5)==label 23927
+false 566
+false positive 104
+
+true p(>=0.6)==label 23504
+false 989
+false positive 27
+
+true p(>=0.7)==label 22748
+false 1745
+false positive 0
+
+true p(>=0.8)==label 21648
+false 2845
+false positive 0
+
+true p(>=0.9)==label 20049
+false 4444
+false positive 0
+
+```
+- p(>=0.5) has the best performance (97,6%).
+- p(>=0.7) has the fewest **false positives** (ham incorrectly classified as spam) and a performance of 88,3%.
+
+If you are okay with few emails incorrectly not classified as fraud and do not want any ham email classified as fraud, select the later.
 
 # 
 - **rust-bert-fraud-detection** can be further improved by finding a better set of [topics/fraud indicators](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/mod.rs) to be extracted and used for the classification. 
 - Using a better model for the topic extraction and sentiment prediction should also improve the fraud detection.
-- Replacing the [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) with a better model might also improve the performance. 
+- Replacing the [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) with a better model (Neural Network) might also improve the performance. 
+- More training data is always good.
 
 # Docker
 ```sudo docker build -t rust-bert-fraud-detection .``` (build image)
