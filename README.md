@@ -131,10 +131,12 @@ false positive 0
 
 ```
 - p(>=0.4) has the best performance (98,2%).
+
+```Note: This makes sense because the training data contains more ham than spam entries.```
 - p(>=0.5) has the second best performance (97,6%), with a lot less **false positives** (ham incorrectly classified as spam).
 - p(>=0.7) has the fewest **false positives** and a performance of 88,3%.
 
-If you are okay with few emails incorrectly not classified as fraud and do not want any ham email classified as fraud, select the later.
+```If you are okay with few emails incorrectly not classified as fraud and do not want any ham email classified as fraud, select the later.```
 
 # 
 - **rust-bert-fraud-detection** can be further improved by finding a better set of [topics/fraud indicators](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/mod.rs) to be extracted and used for the classification. 
