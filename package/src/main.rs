@@ -58,14 +58,25 @@ fn main_3() -> anyhow::Result<()> {
 /*_training*/
 fn main() -> anyhow::Result<()> {
 
-    let training_data_paths = ["data_gen_v1_(enronSpamSubset).json","data_gen_v1.json","data_gen_v1_(proposals_all).json"];
+    let training_data_paths = [
+      "data_gen_v3_(enronSpamSubset).json",
+      "data_gen_v3_(lingSpam).json",
+      "data_gen_v3_(smsspamcollection).json",
+      "data_gen_v3_(completeSpamAssassin).json",
+      "data_gen_v3_(governance_proposal_spam_ham).json",
+      "data_gen_v3_(governance_proposal_spam_ham).json"];
     
     rust_bert_fraud_detection_tools::build::create_classification_model(&training_data_paths)?;
 
-    println!("test with training data");    
-    rust_bert_fraud_detection_tools::build::test_classification_model(&training_data_paths)?;
-    //println!("test with new data");
-    //rust_bert_fraud_detection_tools::build::test_classification_model(&["data_gen_v1.json"])?;
+    println!("test with training data");
+    let test_data_paths = [
+      "data_gen_v3_(enronSpamSubset).json",
+      "data_gen_v3_(lingSpam).json",
+      "data_gen_v3_(smsspamcollection).json",
+      "data_gen_v3_(completeSpamAssassin).json",
+      "data_gen_v3_(governance_proposal_spam_ham).json"];
+    
+    rust_bert_fraud_detection_tools::build::test_classification_model(&test_data_paths)?;
 
     let fraud_probabilities = rust_bert_fraud_detection_tools::fraud_probabilities(&SENTENCES)?;
     println!("Predictions:\n{:?}",fraud_probabilities);
@@ -73,10 +84,25 @@ fn main() -> anyhow::Result<()> {
     Ok(())
 }
 /*_generate_sentiments_and_topics*/
-fn main_2() -> anyhow::Result<()> {
+fn main_888() -> anyhow::Result<()> {
 
-    let training_data_path = "data_gen_v1_(proposals_all).json";
-    rust_bert_fraud_detection_tools::build::create_training_data(vec![/*"./dataset/completeSpamAssassin.csv","./dataset/lingSpam.csv","./dataset/enronSpamSubset.csv"*/"./dataset/proposals.csv"],training_data_path)?;
+    //let training_data_path = "data_gen_v3_(enronSpamSubset).json";
+    //rust_bert_fraud_detection_tools::build::create_training_data(vec!["./dataset/enronSpamSubset.csv"],training_data_path)?;
+    //let training_data_path = "data_gen_v3_(lingSpam).json";
+    //rust_bert_fraud_detection_tools::build::create_training_data(vec!["./dataset/lingSpam.csv"],training_data_path)?;
+
+    let training_data_path = "data_gen_v3_(youtubeSpamCollection).json";
+    rust_bert_fraud_detection_tools::build::create_training_data(vec!["./dataset/youtubeSpamCollection.csv"],training_data_path)?;
+
+/*    let training_data_path = "data_gen_v3_(smsspamcollection).json";
+    rust_bert_fraud_detection_tools::build::create_training_data(vec!["./dataset/smsspamcollection.csv"],training_data_path)?;
+
+    let training_data_path = "data_gen_v3_(completeSpamAssassin).json";
+    rust_bert_fraud_detection_tools::build::create_training_data(vec!["./dataset/completeSpamAssassin.csv"],training_data_path)?;
+*/
+
+
+    //rust_bert_fraud_detection_tools::build::create_training_data(vec!["./dataset/completeSpamAssassin.csv","./dataset/lingSpam.csv","./dataset/enronSpamSubset.csv"],training_data_path)?;
     return Ok(());
 
 }

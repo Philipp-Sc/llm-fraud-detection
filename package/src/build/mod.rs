@@ -23,15 +23,16 @@ pub const FRAUD_INDICATORS: [&str;10] = [
 
 fn read_dataset(path: &str) -> anyhow::Result<Vec<(String,bool)>> {
 
-    let (text_index,label_index) = if !path.contains("enron") {
-        if path.contains("smsspamcollection") {
-            (1,0)
-        }else { // lingSpam / completeSpamAssassin
-            (1,2)
-        }
-    }else{ // enronSpamSubset
+    let (text_index,label_index) = if path.contains("enronSpamSubset") {
         (2,3)
+	}else if path.contains("smsspamcollection"){
+	(1,0)
+	}else if path.contains("lingSpam") || path.contains("completeSpamAssassin") || path.contains("governance_proposal_spam_ham"){
+	(1,2)
+	}else{ // youtubeSpamCollection
+        (0,1)
     };
+
     let mut training_data: Vec<(String,bool)> = Vec::new();
 
     let file = File::open(path)?; // 1896/4150
