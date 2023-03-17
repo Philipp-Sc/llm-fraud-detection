@@ -68,7 +68,7 @@ count ham: 3952
 youtubeSpamCollection.csv
 ---------------
 count spam: 1005
-count ham: 957
+count ham: 951
  
 smsspamcollection.csv 
 ---------------
@@ -81,7 +81,7 @@ count spam: 26
 count ham: 780
 
 TOTAL SPAM: 8771
-TOTAL HAM: 17686
+TOTAL HAM: 17680
 
 ```
 # Model Performance 
