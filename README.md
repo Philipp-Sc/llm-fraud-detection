@@ -130,8 +130,9 @@ false 4444
 false positive 0
 
 ```
-- p(>=0.5) has the best performance (97,6%).
-- p(>=0.7) has the fewest **false positives** (ham incorrectly classified as spam) and a performance of 88,3%.
+- p(>=0.4) has the best performance (98,2%).
+- p(>=0.5) has the second best performance (97,6%), with a lot less **false positives** (ham incorrectly classified as spam).
+- p(>=0.7) has the fewest **false positives** and a performance of 88,3%.
 
 If you are okay with few emails incorrectly not classified as fraud and do not want any ham email classified as fraud, select the later.
 
