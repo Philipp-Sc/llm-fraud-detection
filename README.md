@@ -45,7 +45,7 @@ fn main() -> anyhow::Result<()> {
 
 ```
 ``` 
-[0.8911458333333334, 0.1259672619047619, 0.5364583333333331, 0.0984375, 0.8971354166666666, 0.27120535714285715]
+[0.8714285714285714, 0.45833333333333326, 0.4640625000000002, 0.14419642857142864, 0.8043154761904762, 0.19107142857142856]
 [1.0, 0.0, 1.0, 0.0, 1.0, 0.0]
 ```
 # Training Data
@@ -87,54 +87,52 @@ TOTAL HAM: 17680
 # Model Performance 
 
 ```
-Trained and tested with
----------------
-count spam: 7766
-count ham: 16729
+Trained and tested with the training data above
 ``` 
 ```
-true p(>=0.1)==label 19847
-false 4646
-false positive 4646
+true p(>=0.1)==label 20809
+false 5640
+false positive 5640
 
-true p(>=0.2)==label 22703
-false 1790
-false positive 1788
+true p(>=0.2)==label 24261
+false 2188
+false positive 2188
 
-true p(>=0.3)==label 23725
-false 768
-false positive 747
+true p(>=0.3)==label 25586
+false 863
+false positive 848
 
-true p(>=0.4)==label 24067
-false 426
-false positive 288
+true p(>=0.4)==label 25982
+false 467
+false positive 327
 
-true p(>=0.5)==label 23927
-false 566
-false positive 104
+true p(>=0.5)==label 25842
+false 607
+false positive 113
 
-true p(>=0.6)==label 23504
-false 989
-false positive 27
+true p(>=0.6)==label 25298
+false 1151
+false positive 25
 
-true p(>=0.7)==label 22748
-false 1745
+true p(>=0.7)==label 24386
+false 2063
+false positive 3
+
+true p(>=0.8)==label 23122
+false 3327
 false positive 0
 
-true p(>=0.8)==label 21648
-false 2845
+true p(>=0.9)==label 21315
+false 5134
 false positive 0
 
-true p(>=0.9)==label 20049
-false 4444
-false positive 0
 
 ```
 - p(>=0.4) has the best performance (98,2%).
 
 ```Note: This makes sense because the training data contains more ham than spam entries.```
-- p(>=0.5) has the second best performance (97,6%), with a lot less **false positives** (ham incorrectly classified as spam).
-- p(>=0.7) has the fewest **false positives** and a performance of 88,3%.
+- p(>=0.5) has the second best performance (97,7%), with a lot less **false positives** (ham incorrectly classified as spam).
+- p(>=0.7) has the fewest **false positives** and a performance of 92,2%.
 
 ```If you are okay with few emails incorrectly not classified as fraud and do not want any ham email classified as fraud, select the later.```
 
