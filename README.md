@@ -8,10 +8,10 @@
 # rust-bert-fraud-detection
 Robust semi-supervised fraud detection using Rust native NLP pipelines.
 # About
-**rust-bert-fraud-detection** uses the NLP pipelines from [rust-bert](https://github.com/guillaume-be/rust-bert) to extract topics and sentiment from the given text. A simple [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) is trained to predict fraud/ham. The training data is generated using a diverse collection of commonly used spam/ham datasets (LingSpam, EnronSpam, Spam Assassin Dataset, SMSSpamCollection, YoutubeSpam, ...). Since the [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) is trained on latent features ([topics/fraud indicators](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/mod.rs)) and NOT on a text encoding (such as Bag of Words) much less datapoints are needed to build a general model.
+**rust-bert-fraud-detection** uses the NLP pipelines from [rust-bert](https://github.com/guillaume-be/rust-bert) to extract topics and sentiment from the given text. A simple [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) is trained to predict fraud/ham. The training data is generated using a diverse collection of commonly used spam/ham datasets (LingSpam, EnronSpam, Spam Assassin Dataset, SMSSpamCollection, YoutubeSpam, ...). Since the [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) is trained on latent features ([topics/fraud indicators](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/mod.rs)) and NOT on a text encoding (such as Bag of Words) much less datapoints are needed to build a general model which should work accross different domains (e.g emails, websites and governance proposals).
 # 
-This project is part of [CosmosRustBot](https://github.com/Philipp-Sc/cosmos-rust-bot), which provides Governance Proposal Notifications for Cosmos Blockchains. To detect fake & fraud proposals **rust-bert-fraud-detection** was created. Since **rust-bert-fraud-detection** is semi-supervised it is works accross different domains, even though the [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) was trained only on a fraud/ham email dataset.
-Recently trainig data from Governance Proposals of Cosmos Blockchains were added, to further improve the accuracy.
+This project is part of [CosmosRustBot](https://github.com/Philipp-Sc/cosmos-rust-bot), which provides Governance Proposal Notifications for Cosmos Blockchains. The goal is automatically detect fraudulent and deceitful proposals to prevent users falling for crypto scams. The current model is very effective in detecting fake governance proposals.
+
 #
 Note that the language models used by [rust-bert](https://github.com/guillaume-be/rust-bert) are in the order of the 100s of MBs to GBs. This impacts the hardware requirements and model inference time. A GPU Setup is recommended.
 # Use
@@ -45,7 +45,7 @@ fn main() -> anyhow::Result<()> {
 
 ```
 ``` 
-[0.8911458333333334, 0.1259672619047619, 0.5364583333333331, 0.0984375, 0.8971354166666666, 0.27120535714285715]
+[0.8714285714285714, 0.45833333333333326, 0.4640625000000002, 0.14419642857142864, 0.8043154761904762, 0.19107142857142856]
 [1.0, 0.0, 1.0, 0.0, 1.0, 0.0]
 ```
 # Training Data
@@ -87,62 +87,59 @@ TOTAL HAM: 17680
 # Model Performance 
 
 ```
-Trained and tested with
----------------
-count spam: 7766
-count ham: 16729
+Trained and tested with the training data above
 ``` 
 ```
-true p(>=0.1)==label 19847
-false 4646
-false positive 4646
+true p(>=0.1)==label 20809
+false 5640
+false positive 5640
 
-true p(>=0.2)==label 22703
-false 1790
-false positive 1788
+true p(>=0.2)==label 24261
+false 2188
+false positive 2188
 
-true p(>=0.3)==label 23725
-false 768
-false positive 747
+true p(>=0.3)==label 25586
+false 863
+false positive 848
 
-true p(>=0.4)==label 24067
-false 426
-false positive 288
+true p(>=0.4)==label 25982
+false 467
+false positive 327
 
-true p(>=0.5)==label 23927
-false 566
-false positive 104
+true p(>=0.5)==label 25842
+false 607
+false positive 113
 
-true p(>=0.6)==label 23504
-false 989
-false positive 27
+true p(>=0.6)==label 25298
+false 1151
+false positive 25
 
-true p(>=0.7)==label 22748
-false 1745
+true p(>=0.7)==label 24386
+false 2063
+false positive 3
+
+true p(>=0.8)==label 23122
+false 3327
 false positive 0
 
-true p(>=0.8)==label 21648
-false 2845
+true p(>=0.9)==label 21315
+false 5134
 false positive 0
 
-true p(>=0.9)==label 20049
-false 4444
-false positive 0
 
 ```
 - p(>=0.4) has the best performance (98,2%).
 
 ```Note: This makes sense because the training data contains more ham than spam entries.```
-- p(>=0.5) has the second best performance (97,6%), with a lot less **false positives** (ham incorrectly classified as spam).
-- p(>=0.7) has the fewest **false positives** and a performance of 88,3%.
+- p(>=0.5) has the second best performance (97,7%), with a lot less **false positives** (ham incorrectly classified as spam).
+- p(>=0.7) has the fewest **false positives** and a performance of 92,2%.
 
 ```If you are okay with few emails incorrectly not classified as fraud and do not want any ham email classified as fraud, select the later.```
-
 # 
 - **rust-bert-fraud-detection** can be further improved by finding a better set of [topics/fraud indicators](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/mod.rs) to be extracted and used for the classification. 
 - Using a better model for the topic extraction and sentiment prediction should also improve the fraud detection.
 - Replacing the [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) with a better model (Neural Network) might also improve the performance. 
-- More training data is always good.
+- More (domain specific) training data is always good.
 
 # Docker
 ```sudo docker build -t rust-bert-fraud-detection .``` (build image)
