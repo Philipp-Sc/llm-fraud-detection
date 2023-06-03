@@ -1,9 +1,13 @@
 use linfa_preprocessing::CountVectorizer;
+use linfa_bayes::{GaussianNbParams, GaussianNbValidParams, Result};
+use linfa::prelude::*;
+use ndarray::array;
 
 pub fn test_this() {
-    let vectorizer = CountVectorizer::params()
-        .fit_files(&training_filenames, ISO_8859_1, Strict)
-        .unwrap();
+
+    let texts = array!["oNe two three four", "TWO three four", "three;four", "four"];
+    let vectorizer = CountVectorizer::params().fit(&texts).unwrap();
+
     println!(
         "We obtain a vocabulary with {} entries",
         vectorizer.nentries()
@@ -13,11 +17,9 @@ pub fn test_this() {
     println!(
         "Now let's generate a matrix containing the tf-idf value of each entry in each document"
     );
-// Transforming gives a sparse dataset, we make it dense in order to be able to fit the Naive Bayes model
-    let training_records = vectorizer
-        .transform_files(&training_filenames, ISO_8859_1, Strict)
-        .to_dense();
-// Currently linfa only allows real valued features so we have to transform the integer counts to floats
+    // Transforming gives a sparse dataset, we make it dense in order to be able to fit the Naive Bayes model
+    let training_records = vectorizer.transform(&texts).to_dense();
+    // Currently linfa only allows real valued features so we have to transform the integer counts to floats
     let training_records = training_records.mapv(|c| c as f32);
 
     println!(
@@ -25,4 +27,22 @@ pub fn test_this() {
         training_records.dim().0,
         training_records.dim().1
     );
+
+    let labels = array![1, 1, 1, 0];
+
+    let ds = DatasetView::new(training_records.view(), labels.view());
+
+    // create a new parameter set with variance smoothing equals `1e-5`
+    let unchecked_params = GaussianNbParams::new()
+        .var_smoothing(1e-5);
+
+    // fit model with unchecked parameter set
+    let model = unchecked_params.fit(&ds)?;
+
+    // transform into a verified parameter set
+    let checked_params = unchecked_params.check()?;
+
+    // update model with the verified parameters, this only returns
+    // errors originating from the fitting process
+    let model = checked_params.fit_with(Some(model), &ds)?;
 }

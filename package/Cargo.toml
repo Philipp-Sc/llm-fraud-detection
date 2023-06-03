@@ -19,6 +19,8 @@ path = "src/main.rs"
 [dependencies]
 linfa = "0.6.1"
 linfa-preprocessing = "0.6.1"
+linfa-bayes = "0.6.1"
+ndarray = "0.15.6"
 serde = {version = "1.0", features=["derive"]}
 serde_json = "1.0"
 anyhow = "1.0"
@@ -27,7 +29,6 @@ itertools = {version = "0.10.5"}
 csv = {version = "1.1"}
 rust-bert = {version = "0.19.0"}
 smartcore = {version = "0.2.1", features=["serde"]}
-ndarray = {version = "0.15.0"}
 rand = {version = "0.8.5"}
 regex = {version = "1.6.0"}
 lazy_static = {version = "1.4.0"}
