@@ -56,18 +56,24 @@ fn read_dataset(path: &str) -> anyhow::Result<Vec<(String,bool)>> {
 }
 
 
-// https://www.kaggle.com/datasets/nitishabharathi/email-spam-dataset
-// "./dataset/completeSpamAssassin.csv" 1896/4150
-// "./dataset/lingSpam.csv" 433/2172
-// "./dataset/enronSpamSubset.csv" 5000/5000
-pub fn create_training_data(dataset_paths: Vec<&str>,topics_output_path: &str) -> anyhow::Result<()> {
-
+pub fn read_datasets(dataset_paths: Vec<&str>) -> anyhow::Result<Vec<(String,bool)>> {
     let mut dataset: Vec<(String,bool)> = read_dataset(dataset_paths.get(0).ok_or(anyhow::anyhow!("Error: dataset_paths is empty!'"))?)?;
     if dataset_paths.len() > 1 {
         for i in 1..dataset_paths.len() {
             dataset.append(&mut read_dataset(dataset_paths[i])?);
         }
     }
+    Ok(dataset)
+}
+
+
+// https://www.kaggle.com/datasets/nitishabharathi/email-spam-dataset
+// "./dataset/completeSpamAssassin.csv" 1896/4150
+// "./dataset/lingSpam.csv" 433/2172
+// "./dataset/enronSpamSubset.csv" 5000/5000
+pub fn create_training_data(dataset_paths: Vec<&str>,topics_output_path: &str) -> anyhow::Result<()> {
+
+    let mut dataset: Vec<(String,bool)> = read_datasets(dataset_paths)?;
 
     println!("count spam: {:?}", dataset.iter().filter(|x| x.1).count());
     println!("count ham: {:?}", dataset.iter().filter(|x| !x.1).count());
@@ -128,6 +134,19 @@ pub fn test_classification_model(paths: &[&str]) -> anyhow::Result<()> {
     }
 
     classification::test_linear_regression_model(&x_dataset,&y_dataset)?;
+
+    Ok(())
+}
+
+pub fn create_naive_bayes_model(paths: &[&str]) -> anyhow::Result<()> {
+
+    let dataset: Vec<(String,bool)> = read_datasets(dataset_paths)?;
+
+    let x_dataset= dataset.iter().map(|x| x.0.clone()).collect::<Vec<String>>();
+    let y_dataset= dataset.into_iter().map(|x| if x.1 {0} else {0}).collect::<Vec<i32>>();
+
+    naive_bayes::update_naive_bayes_model(x_dataset,y_dataset)?;
+    //classification::test_linear_regression_model(&x_dataset,&y_dataset)?;
 
     Ok(())
 }

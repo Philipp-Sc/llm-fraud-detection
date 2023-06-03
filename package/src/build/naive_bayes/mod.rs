@@ -3,10 +3,9 @@ use linfa_bayes::{GaussianNbParams, GaussianNbValidParams, Result};
 use linfa::prelude::*;
 use ndarray::array;
 
-pub fn test_this() {
+pub fn update_naive_bayes_model(x_dataset: Vec<String>, y_dataset: Vec<i32>) ->  anyhow::Result<()> {
 
-    let texts = array!["oNe two three four", "TWO three four", "three;four", "four"];
-    let vectorizer = CountVectorizer::params().fit(&texts).unwrap();
+    let vectorizer = CountVectorizer::params().fit(&x_dataset).unwrap();
 
     println!(
         "We obtain a vocabulary with {} entries",
@@ -18,7 +17,7 @@ pub fn test_this() {
         "Now let's generate a matrix containing the tf-idf value of each entry in each document"
     );
     // Transforming gives a sparse dataset, we make it dense in order to be able to fit the Naive Bayes model
-    let training_records = vectorizer.transform(&texts).to_dense();
+    let training_records = vectorizer.transform(&x_dataset).to_dense();
     // Currently linfa only allows real valued features so we have to transform the integer counts to floats
     let training_records = training_records.mapv(|c| c as f32);
 
@@ -28,9 +27,7 @@ pub fn test_this() {
         training_records.dim().1
     );
 
-    let labels = array![1, 1, 1, 0];
-
-    let ds = DatasetView::new(training_records.view(), labels.view());
+    let ds = DatasetView::new(training_records.view(), y_dataset.into().view());
 
     // create a new parameter set with variance smoothing equals `1e-5`
     let unchecked_params = GaussianNbParams::new()
