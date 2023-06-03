@@ -45,4 +45,14 @@ pub fn test_this() {
     // update model with the verified parameters, this only returns
     // errors originating from the fitting process
     let model = checked_params.fit_with(Some(model), &ds).unwrap();
+
+    let training_prediction = model.predict(&ds);
+
+    let cm = training_prediction
+        .confusion_matrix(&training_dataset)
+        .unwrap();
+    // 0.9944
+    let accuracy = cm.f1_score();
+    println!("The fitted model has a training f1 score of {}", accuracy);
+
 }

@@ -4,6 +4,7 @@ use std::time::Duration;
 use rust_bert_fraud_detection_tools::service::spawn_rust_bert_fraud_detection_socket_service;
 use std::env;
 use rust_bert_fraud_detection_socket_ipc::ipc::client_send_rust_bert_fraud_detection_request;
+use rust_bert_fraud_detection_tools::build::naive_bayes::test_this;
 
 pub const SENTENCES: [&str;6] = [
     "Lose up to 19% weight. Special promotion on our new weightloss.",
@@ -25,7 +26,7 @@ pub const SENTENCES: [&str;6] = [
 //          sudo docker stop CONTAINER_ID
 // Run service test:
 //      sudo docker run -it --rm -v "$(pwd)/rustbert_cache":/usr/rustbert_cache -v "$(pwd)/target":/usr/target -v "$(pwd)/cargo_home":/usr/cargo_home -v "$(pwd)/package":/usr/workspace -v "$(pwd)/tmp":/usr/workspace/tmp -v "$(pwd)/socket_ipc":/usr/socket_ipc rust-bert-fraud-detection cargo run --release test_service
-fn main_3() -> anyhow::Result<()> {
+fn main_00() -> anyhow::Result<()> {
 
     let args: Vec<String> = env::args().collect();
     println!("env::args().collect(): {:?}",args);
@@ -56,7 +57,7 @@ fn main_3() -> anyhow::Result<()> {
 }
 
 /*_training*/
-fn main() -> anyhow::Result<()> {
+fn main_9999() -> anyhow::Result<()> {
 
     let training_data_paths = [
       "data_gen_v3_(enronSpamSubset).json",
@@ -83,6 +84,11 @@ fn main() -> anyhow::Result<()> {
     println!("Labels:\n[1.0, 0.0, 1.0, 0.0, 1.0, 0.0]");
     Ok(())
 }
+
+fn main() -> anyhow::Result<()>{
+    Ok(test_this())
+}
+
 /*_generate_sentiments_and_topics*/
 fn main_888() -> anyhow::Result<()> {
 
