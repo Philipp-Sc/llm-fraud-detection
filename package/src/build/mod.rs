@@ -56,7 +56,7 @@ fn read_dataset(path: &str) -> anyhow::Result<Vec<(String,bool)>> {
 }
 
 
-pub fn read_datasets(dataset_paths: Vec<&str>) -> anyhow::Result<Vec<(String,bool)>> {
+pub fn read_datasets(dataset_paths: &[&str]) -> anyhow::Result<Vec<(String,bool)>> {
     let mut dataset: Vec<(String,bool)> = read_dataset(dataset_paths.get(0).ok_or(anyhow::anyhow!("Error: dataset_paths is empty!'"))?)?;
     if dataset_paths.len() > 1 {
         for i in 1..dataset_paths.len() {
@@ -140,7 +140,7 @@ pub fn test_classification_model(paths: &[&str]) -> anyhow::Result<()> {
 
 pub fn create_naive_bayes_model(paths: &[&str]) -> anyhow::Result<()> {
 
-    let dataset: Vec<(String,bool)> = read_datasets(dataset_paths)?;
+    let dataset: Vec<(String,bool)> = read_datasets(paths)?;
 
     let x_dataset= dataset.iter().map(|x| x.0.clone()).collect::<Vec<String>>();
     let y_dataset= dataset.into_iter().map(|x| if x.1 {0} else {0}).collect::<Vec<i32>>();
