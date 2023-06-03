@@ -6,7 +6,7 @@ use ndarray::{ArrayBase, Dim, OwnedRepr};
 pub fn update_naive_bayes_model(x_dataset: Vec<String>, y_dataset: Vec<i32>) ->  anyhow::Result<()> {
 
     let texts: ArrayBase<OwnedRepr<String>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((x_dataset.len(),), x_dataset).unwrap();
-    let labels: ArrayBase<OwnedRepr<i32>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((y_dataset.len(),), y_dataset).unwrap();
+    let labels: ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((y_dataset.len(),), y_dataset.into_iter().map(|x| x as usize).collect()).unwrap();
 
     let vectorizer = CountVectorizer::params().fit(&texts).unwrap();
 
