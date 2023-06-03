@@ -37,12 +37,12 @@ pub fn test_this() {
         .var_smoothing(1e-5);
 
     // fit model with unchecked parameter set
-    let model = unchecked_params.fit(&ds)?;
+    let model = unchecked_params.fit(&ds).unwrap();
 
     // transform into a verified parameter set
-    let checked_params = unchecked_params.check()?;
+    let checked_params = unchecked_params.check().unwrap();
 
     // update model with the verified parameters, this only returns
     // errors originating from the fitting process
-    let model = checked_params.fit_with(Some(model), &ds)?;
+    let model = checked_params.fit_with(Some(model), &ds).unwrap();
 }
