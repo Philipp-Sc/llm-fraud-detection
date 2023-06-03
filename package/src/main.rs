@@ -4,7 +4,7 @@ use std::time::Duration;
 use rust_bert_fraud_detection_tools::service::spawn_rust_bert_fraud_detection_socket_service;
 use std::env;
 use rust_bert_fraud_detection_socket_ipc::ipc::client_send_rust_bert_fraud_detection_request;
-use rust_bert_fraud_detection_tools::build::naive_bayes::{update_naive_bayes_model};
+use rust_bert_fraud_detection_tools::build::create_naive_bayes_model;
 
 pub const SENTENCES: [&str;6] = [
     "Lose up to 19% weight. Special promotion on our new weightloss.",
@@ -86,7 +86,8 @@ fn main_9999() -> anyhow::Result<()> {
 }
 
 fn main() -> anyhow::Result<()>{
-    update_naive_bayes_model()
+    let paths= vec!["./dataset/youtubeSpamCollection.csv"];
+    create_naive_bayes_model(&paths)
 }
 
 /*_generate_sentiments_and_topics*/

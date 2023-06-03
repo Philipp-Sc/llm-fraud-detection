@@ -73,7 +73,7 @@ pub fn read_datasets(dataset_paths: &[&str]) -> anyhow::Result<Vec<(String,bool)
 // "./dataset/enronSpamSubset.csv" 5000/5000
 pub fn create_training_data(dataset_paths: Vec<&str>,topics_output_path: &str) -> anyhow::Result<()> {
 
-    let mut dataset: Vec<(String,bool)> = read_datasets(dataset_paths)?;
+    let mut dataset: Vec<(String,bool)> = read_datasets(&dataset_paths)?;
 
     println!("count spam: {:?}", dataset.iter().filter(|x| x.1).count());
     println!("count ham: {:?}", dataset.iter().filter(|x| !x.1).count());
