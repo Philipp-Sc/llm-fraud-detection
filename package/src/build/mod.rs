@@ -6,6 +6,7 @@ pub mod classification;
 pub mod language_model;
 pub mod feature_engineering;
 pub mod sentiment;
+pub mod naive_bayes;
 
 pub const FRAUD_INDICATORS: [&str;10] = [
 "(clickbait, suspected spam, fake news)", 
@@ -130,4 +131,3 @@ pub fn test_classification_model(paths: &[&str]) -> anyhow::Result<()> {
 
     Ok(())
 }
-
