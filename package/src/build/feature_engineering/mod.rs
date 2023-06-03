@@ -19,14 +19,18 @@ pub fn get_features(text: String) -> Vec<f64> {
     let mut features = Vec::new();
     
     let word_count = words_count::count(&text);
+    // Number of Words
     features.push(word_count.words as f64);
+    // Number of URLs
+    features.push(RE_URL.captures_iter(&text.to_lowercase()).count() as f64);
+    // Number of Spam Words
+    features.push(RE_OBVIOUS_SPAM.captures_iter(&text.to_lowercase()).count() as f64);
+    // Number of Non-Spam Words
+    features.push(RE_OBVIOUS_NOT_SPAM.captures_iter(&text.to_lowercase()).count() as f64);
+    // Number of Upper-Case Words
+    features.push(RE_UPPER_CASE_WORD.captures_iter(&text).count() as f64);
 
-    features.push(RE_URL.captures_iter(&text.to_lowercase()).count() as f64); // count urls
+    // replace "Number of Spam Words" and "Number of Non-Spam Words" with Naive Bayes Prediction of CountVectors.
 
-    features.push(RE_OBVIOUS_SPAM.captures_iter(&text.to_lowercase()).count() as f64); // count spam words
-    features.push(RE_OBVIOUS_NOT_SPAM.captures_iter(&text.to_lowercase()).count() as f64); // count non spam words
-
-    features.push(RE_UPPER_CASE_WORD.captures_iter(&text).count() as f64); // count upper case words
-    
     features
 }
