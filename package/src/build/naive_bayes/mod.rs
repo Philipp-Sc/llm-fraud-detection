@@ -67,6 +67,11 @@ pub fn update_naive_bayes_model(x_dataset: Vec<String>, y_dataset: Vec<i32>,test
         "We obtain a vocabulary with {} entries",
         vectorizer.nentries()
     );
+    println!(
+        "Vocabulary entries: {:?}",
+        vectorizer.vocabulary()
+    );
+    
 
     println!();
     println!(
