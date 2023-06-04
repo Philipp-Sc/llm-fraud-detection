@@ -87,7 +87,8 @@ fn main_9999() -> anyhow::Result<()> {
 
 fn main() -> anyhow::Result<()>{
     let paths= vec!["./dataset/youtubeSpamCollection.csv"];
-    create_naive_bayes_model(&paths)
+    let test_paths= vec!["./dataset/smsspamcollection.csv"];
+    create_naive_bayes_model(&paths,&test_paths)
 }
 
 /*_generate_sentiments_and_topics*/
