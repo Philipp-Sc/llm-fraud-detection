@@ -7,6 +7,7 @@ use ndarray::Axis;
 use linfa::dataset::Labels;
 use std::collections::HashMap;
 
+use std::fs;
 use regex::Regex;
 
 fn remove_non_letters(text: &str) -> String {
@@ -53,34 +54,25 @@ pub fn update_naive_bayes_model(x_dataset: Vec<String>, y_dataset: Vec<i32>,test
     println!();
 
 
-    let min_freq = 0.005;
-    let max_freq = 0.600;
-    let stopwords = vec![
-        "a", "an", "the", "and", "but", "or", "not", "in", "on", "at", "to",
-        "for", "of", "with", "without", "from", "by", "about", "above", "below",
-        "over", "under", "into", "onto", "through", "during", "before", "after",
-        "between", "among", "since", "until", "up", "down", "out", "off", "on",
-        "again", "further", "then", "once", "here", "there", "where", "when",
-        "why", "how", "all", "any", "both", "each", "few", "more", "most", "other",
-        "some", "such", "no", "nor", "only", "own", "same", "so", "than", "too",
-        "very", "can", "will", "just", "don", "should", "now", "also",
-        // Add more stopwords as needed
-    ];
+    let min_freq = 0.0005;
+    let max_freq = 0.500;
     let vectorizer = CountVectorizer::params()
         .convert_to_lowercase(true)
         .document_frequency(min_freq,max_freq)
-        .n_gram_range(1,7)
-        .stopwords(&stopwords)
-        .fit(&texts).unwrap(); // before 166859
+        .n_gram_range(1,3)
+        .fit(&texts).unwrap(); 
 
     println!(
         "We obtain a vocabulary with {} entries",
         vectorizer.nentries()
     );
-    println!(
+/*    println!(
         "Vocabulary entries: {:?}",
         vectorizer.vocabulary()
     );
+*/
+
+    fs::write("./CountVectorizer.bin", &serde_json::to_string(&vectorizer)?).ok();
 
 
     println!();
@@ -151,6 +143,8 @@ pub fn update_naive_bayes_model(x_dataset: Vec<String>, y_dataset: Vec<i32>,test
     // update model with the verified parameters, this only returns
     // errors originating from the fitting process
     let model = checked_params.fit_with(Some(model), &ds).unwrap().unwrap();
+    fs::write("./GaussianNbModel.bin", &serde_json::to_string(&model)?).ok();
+
 
     let prediction = model.predict(&test_ds);
 

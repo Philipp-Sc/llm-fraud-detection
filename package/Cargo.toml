@@ -17,9 +17,9 @@ path = "src/main.rs"
 
 
 [dependencies]
-linfa = "0.6.1"
-linfa-preprocessing = "0.6.1"
-linfa-bayes = "0.6.1"
+linfa = { git="https://github.com/rust-ml/linfa.git", features = ["serde"] }
+linfa-preprocessing = { git="https://github.com/rust-ml/linfa.git", features = ["serde"] }
+linfa-bayes = { git="https://github.com/rust-ml/linfa.git", features = ["serde"] }
 ndarray = "0.15.6"
 serde = {version = "1.0", features=["derive"]}
 serde_json = "1.0"
