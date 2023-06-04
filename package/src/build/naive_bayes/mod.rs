@@ -43,8 +43,8 @@ pub fn update_naive_bayes_model(x_dataset: Vec<String>, y_dataset: Vec<i32>,test
     println!();
 
 
-    let min_freq = 0.01;
-    let max_freq = 0.99;
+    let min_freq = 0.005;
+    let max_freq = 0.600;
     let stopwords = vec![
         "a", "an", "the", "and", "but", "or", "not", "in", "on", "at", "to",
         "for", "of", "with", "without", "from", "by", "about", "above", "below",
@@ -59,6 +59,7 @@ pub fn update_naive_bayes_model(x_dataset: Vec<String>, y_dataset: Vec<i32>,test
     let vectorizer = CountVectorizer::params()
         .convert_to_lowercase(true)
         .document_frequency(min_freq,max_freq)
+        .n_gram_range(1,7)
         .stopwords(&stopwords)
         .fit(&texts).unwrap(); // before 166859
 
