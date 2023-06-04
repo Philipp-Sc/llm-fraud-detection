@@ -94,6 +94,11 @@ fn main() -> anyhow::Result<()>{
         "./dataset/completeSpamAssassin.csv",
         "./dataset/governance_proposal_spam_ham.csv"];
     let test_paths= vec![
+        "./dataset/enronSpamSubset.csv",
+        "./dataset/lingSpam.csv",
+        "./dataset/youtubeSpamCollection.csv",
+        "./dataset/smsspamcollection.csv",
+        "./dataset/completeSpamAssassin.csv",
         "./dataset/governance_proposal_spam_ham.csv"];
     create_naive_bayes_model(&paths,&test_paths)
 }
