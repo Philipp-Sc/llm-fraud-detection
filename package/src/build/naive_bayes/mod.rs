@@ -7,9 +7,19 @@ use ndarray::Axis;
 use linfa::dataset::Labels;
 use std::collections::HashMap;
 
+use regex::Regex;
+
+fn remove_non_letters(text: &str) -> String {
+    let regex = Regex::new(r"[^a-zA-Z]").unwrap();
+    let processed_text = regex.replace_all(text, " ").to_string();
+    let regex = Regex::new(r"\s+").unwrap();
+    let cleaned_text = regex.replace_all(&processed_text, " ").to_string();
+    cleaned_text
+}
+
 pub fn update_naive_bayes_model(x_dataset: Vec<String>, y_dataset: Vec<i32>,test_x_dataset: Vec<String>, test_y_dataset: Vec<i32>) ->  anyhow::Result<()> {
 
-    let texts: ArrayBase<OwnedRepr<String>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((x_dataset.len(),), x_dataset).unwrap();
+    let texts: ArrayBase<OwnedRepr<String>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((x_dataset.len(),), x_dataset.into_iter().map(|x| remove_non_letters(&x)).collect()).unwrap();
     let labels: ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((y_dataset.len(),), y_dataset.into_iter().map(|x| x as usize).collect()).unwrap();
 
     let test_texts: ArrayBase<OwnedRepr<String>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((test_x_dataset.len(),), test_x_dataset).unwrap();
@@ -71,7 +81,7 @@ pub fn update_naive_bayes_model(x_dataset: Vec<String>, y_dataset: Vec<i32>,test
         "Vocabulary entries: {:?}",
         vectorizer.vocabulary()
     );
-    
+
 
     println!();
     println!(
