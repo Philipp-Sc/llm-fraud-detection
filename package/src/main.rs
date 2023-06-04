@@ -86,8 +86,14 @@ fn main_9999() -> anyhow::Result<()> {
 }
 
 fn main() -> anyhow::Result<()>{
-    let paths= vec!["./dataset/youtubeSpamCollection.csv"];
-    let test_paths= vec!["./dataset/smsspamcollection.csv"];
+    let paths= vec![
+        "./dataset/enronSpamSubset.csv",
+        "./dataset/lingSpam.csv",
+        "./dataset/youtubeSpamCollection.csv",
+        "./dataset/smsspamcollection.csv",
+        "./dataset/completeSpamAssassin.csv"];
+    let test_paths= vec![
+        "./dataset/governance_proposal_spam_ham.csv"];
     create_naive_bayes_model(&paths,&test_paths)
 }
 

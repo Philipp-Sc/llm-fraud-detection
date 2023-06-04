@@ -39,6 +39,7 @@ pub fn update_naive_bayes_model(x_dataset: Vec<String>, y_dataset: Vec<i32>,test
     for (label, count) in &test_label_counts {
         println!("Label: {}, Count: {}", label, count);
     }
+    println!();
 
 
     let vectorizer = CountVectorizer::params().fit(&texts).unwrap();
