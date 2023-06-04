@@ -43,9 +43,9 @@ pub fn update_naive_bayes_model(x_dataset: Vec<String>, y_dataset: Vec<i32>,test
     println!();
 
 
-    let min_freq = 0.001;
-    let max_freq = 0.9;
-    let vectorizer = CountVectorizer::params().document_frequency(min_freq,max_freq).fit(&texts).unwrap(); // before 166859
+    let min_freq = 0.01;
+    let max_freq = 0.99;
+    let vectorizer = CountVectorizer::params().convert_to_lowercase(true).document_frequency(min_freq,max_freq).fit(&texts).unwrap(); // before 166859
 
     println!(
         "We obtain a vocabulary with {} entries",
