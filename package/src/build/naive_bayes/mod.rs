@@ -86,25 +86,19 @@ pub fn update_naive_bayes_model(x_dataset: Vec<String>, y_dataset: Vec<i32>,test
     // errors originating from the fitting process
     let model = checked_params.fit_with(Some(model), &ds).unwrap().unwrap();
 
-    let training_prediction = model.predict(&test_ds);
-
-    println!("{:?}",training_prediction);
+    let prediction = model.predict(&test_ds);
 
     // Displaying predictions
     println!("Predictions:");
-    let num_predictions = 5;
-    let binding = training_prediction.labels();
-    let prediction_labels = binding.iter()
-        .take(num_predictions)
-        .collect::<Vec<_>>();
+    let num_predictions = 5; 
     for i in 0..num_predictions {
-        let prediction = prediction_labels[i];
+        let prediction = prediction.index_axis(Axis(0), i);
         let true_label = test_labels[i];
         let text = test_texts[i].to_owned();
         println!("Text: {}, Prediction: {}, True Label: {}", text, prediction, true_label);
     }
 
-    let cm = training_prediction
+    let cm = prediction
         .confusion_matrix(&test_ds)
         .unwrap();
     // 0.9944
