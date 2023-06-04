@@ -3,6 +3,8 @@ use linfa_bayes::{GaussianNbParams, GaussianNbValidParams, Result};
 use linfa::prelude::*;
 use ndarray::{ArrayBase, Dim, OwnedRepr};
 use ndarray::Axis;
+use linfa::dataset::Labels;
+
 
 pub fn update_naive_bayes_model(x_dataset: Vec<String>, y_dataset: Vec<i32>,test_x_dataset: Vec<String>, test_y_dataset: Vec<i32>) ->  anyhow::Result<()> {
 
