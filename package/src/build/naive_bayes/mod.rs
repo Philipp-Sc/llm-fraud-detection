@@ -88,9 +88,9 @@ pub fn update_naive_bayes_model(x_dataset: Vec<String>, y_dataset: Vec<i32>,test
 
     let training_prediction = model.predict(&test_ds);
 
+    println!("{:?}",training_prediction);
 
     // Displaying predictions
-    println!("Predictions:");
     println!("Predictions:");
     let num_predictions = 5;
     let binding = training_prediction.labels();
