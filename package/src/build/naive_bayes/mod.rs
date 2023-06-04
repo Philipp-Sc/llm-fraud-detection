@@ -62,6 +62,7 @@ pub fn update_naive_bayes_model(x_dataset: Vec<String>, y_dataset: Vec<i32>,test
         training_records.dim().0,
         training_records.dim().1
     );
+    println!();
 
     // Displaying sample entries of the training data
     println!("Sample entries of the training data:");
@@ -72,6 +73,7 @@ pub fn update_naive_bayes_model(x_dataset: Vec<String>, y_dataset: Vec<i32>,test
         let text = texts[i].to_owned();
         println!("Text: {}, Data: {:?}, Label: {}", text, sample_entry, label);
     }
+    println!();
 
     let ds = DatasetView::new(training_records.view(), labels.view());
 
@@ -85,6 +87,7 @@ pub fn update_naive_bayes_model(x_dataset: Vec<String>, y_dataset: Vec<i32>,test
         test_records.dim().0,
         test_records.dim().1
     );
+    println!();
 
 
     // Displaying sample entries of the test data
@@ -95,6 +98,7 @@ pub fn update_naive_bayes_model(x_dataset: Vec<String>, y_dataset: Vec<i32>,test
         let text = test_texts[i].to_owned();
         println!("Text: {}, Data: {:?}, Label: {}", text, sample_entry, label);
     }
+    println!();
 
     let test_ds = DatasetView::new(test_records.view(), test_labels.view());
 
@@ -124,6 +128,7 @@ pub fn update_naive_bayes_model(x_dataset: Vec<String>, y_dataset: Vec<i32>,test
         let text = test_texts[i].to_owned();
         println!("Text: {}, Prediction: {}, True Label: {}", text, prediction, true_label);
     }
+    println!();
 
     let cm = prediction
         .confusion_matrix(&test_ds)
