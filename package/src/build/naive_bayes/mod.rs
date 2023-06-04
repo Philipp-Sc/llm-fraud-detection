@@ -1,3 +1,4 @@
+use std::cmp::min;
 use linfa_preprocessing::CountVectorizer;
 use linfa_bayes::{GaussianNbParams, GaussianNbValidParams, Result};
 use linfa::prelude::*;
@@ -42,7 +43,9 @@ pub fn update_naive_bayes_model(x_dataset: Vec<String>, y_dataset: Vec<i32>,test
     println!();
 
 
-    let vectorizer = CountVectorizer::params().fit(&texts).unwrap();
+    let min_freq = 0.001;
+    let max_freq = 0.9;
+    let vectorizer = CountVectorizer::params().document_frequency(min_freq,max_freq).fit(&texts).unwrap(); // before 166859
 
     println!(
         "We obtain a vocabulary with {} entries",
