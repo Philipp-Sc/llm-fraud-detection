@@ -4,7 +4,7 @@ use linfa::prelude::*;
 use ndarray::{ArrayBase, Dim, OwnedRepr};
 use ndarray::Axis;
 use linfa::dataset::Labels;
-
+use std::collections::HashMap;
 
 pub fn update_naive_bayes_model(x_dataset: Vec<String>, y_dataset: Vec<i32>,test_x_dataset: Vec<String>, test_y_dataset: Vec<i32>) ->  anyhow::Result<()> {
 
@@ -13,6 +13,33 @@ pub fn update_naive_bayes_model(x_dataset: Vec<String>, y_dataset: Vec<i32>,test
 
     let test_texts: ArrayBase<OwnedRepr<String>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((test_x_dataset.len(),), test_x_dataset).unwrap();
     let test_labels: ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((test_y_dataset.len(),), test_y_dataset.into_iter().map(|x| x as usize).collect()).unwrap();
+
+    // Counting label categories in the training dataset
+    let mut training_label_counts: HashMap<usize, usize> = HashMap::new();
+    for &label in labels.iter() {
+        let count = training_label_counts.entry(label).or_insert(0);
+        *count += 1;
+    }
+
+    println!("Label category counts in the training dataset:");
+    for (label, count) in &training_label_counts {
+        println!("Label: {}, Count: {}", label, count);
+    }
+
+    println!();
+
+    // Counting label categories in the test dataset
+    let mut test_label_counts: HashMap<usize, usize> = HashMap::new();
+    for &label in test_labels.iter() {
+        let count = test_label_counts.entry(label).or_insert(0);
+        *count += 1;
+    }
+
+    println!("Label category counts in the test dataset:");
+    for (label, count) in &test_label_counts {
+        println!("Label: {}, Count: {}", label, count);
+    }
+
 
     let vectorizer = CountVectorizer::params().fit(&texts).unwrap();
 
