@@ -12,7 +12,7 @@ Robust semi-supervised fraud detection using Rust native NLP pipelines.
 #
 Nonetheless **rust-bert-fraud-detection** uses an additional measure to improve the performance further:    
 
-['hard-coded' features](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/feature_engineering/mod.rs), they include word count information, punctuation, number, url and upper-case counts. And additionally the prediction of a [Naive Bayes classifier](https://docs.rs/crate/linfa-bayes/latest) which was trained on a Bag of Words representation of the used spam/ham dataset. Naive Bayes classifier are well known for their effectiveness in text related tasks especially spam detection.   
+['hard-coded' features](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/feature_engineering/mod.rs), they include word count information, punctuation, number, url and upper-case counts. This also includes a count of red/green flags, i.e words that are known to have a high likelihood being only present in spam/ham. And additionally the prediction of a [Naive Bayes classifier](https://docs.rs/crate/linfa-bayes/latest) which was trained on a Bag of Words representation of the used spam/ham dataset. Naive Bayes classifier are well known for their effectiveness in text related tasks especially spam detection.   
 This addition of a Naive Bayes classifier with an `f1 score of 0.84` improves the accuracy of the final Random Forest Regressor from 97% towards ~99%.
 
 # 
