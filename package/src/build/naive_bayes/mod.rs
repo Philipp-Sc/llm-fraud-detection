@@ -2,13 +2,38 @@ use std::cmp::min;
 use linfa_preprocessing::CountVectorizer;
 use linfa_bayes::{GaussianNbParams, GaussianNbValidParams, Result};
 use linfa::prelude::*;
-use ndarray::{ArrayBase, Dim, OwnedRepr};
-use ndarray::Axis;
+use linfa_bayes::{GaussianNb};
+use ndarray::{Axis, Dim, Array, ArrayBase, Data, Ix1, OwnedRepr, ViewRepr};
 use linfa::dataset::Labels;
 use std::collections::HashMap;
 
 use std::fs;
 use regex::Regex;
+
+use std::sync::Arc;
+use std::sync::Mutex;
+
+lazy_static::lazy_static! {
+        static ref MODEL: Arc<Mutex<GaussianNb<f32, usize>>> = Arc::new(Mutex::new(get_model().unwrap()));
+        static ref VECTORIZER: Arc<Mutex<CountVectorizer>> = Arc::new(Mutex::new(get_vectorizer().unwrap()));
+
+    }
+
+fn get_model() -> anyhow::Result<GaussianNb<f32, usize>>{
+    let model: GaussianNb<f32, usize> = match serde_json::from_str(&fs::read_to_string("./GaussianNbModel.bin")?)? {
+        Some(lr) => { lr },
+        None => { return Err(anyhow::anyhow!("Error: unable to load './GaussianNbModel.bin'"));}
+    };
+    Ok(model)
+
+}
+fn get_vectorizer() -> anyhow::Result<CountVectorizer> {
+    let vectorizer: CountVectorizer =  match serde_json::from_str(&fs::read_to_string("./CountVectorizer.bin")?)? {
+        Some(lr) => { lr },
+        None => { return Err(anyhow::anyhow!("Error: unable to load './CountVectorizer.bin'"));}
+    };
+    Ok(vectorizer)
+}
 
 fn remove_non_letters(text: &str) -> String {
     let regex = Regex::new(r"[^a-zA-Z]").unwrap();
@@ -17,6 +42,22 @@ fn remove_non_letters(text: &str) -> String {
     let cleaned_text = regex.replace_all(&processed_text, " ").to_string();
     cleaned_text
 }
+
+pub fn predict(x_dataset: Vec<String>) ->  anyhow::Result<Vec<usize>> {
+
+    let vectorizer = VECTORIZER.try_lock().unwrap();
+    
+    let test_texts: ArrayBase<OwnedRepr<String>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((x_dataset.len(),), x_dataset).unwrap();
+
+    let test_records = vectorizer.transform(&test_texts).to_dense();
+    let test_records = test_records.mapv(|c| c as f32);
+    let model = MODEL.try_lock().unwrap();
+
+    let prediction = model.predict(&test_records).into_raw_vec();
+    Ok(prediction)
+
+}
+
 
 pub fn update_naive_bayes_model(x_dataset: Vec<String>, y_dataset: Vec<i32>,test_x_dataset: Vec<String>, test_y_dataset: Vec<i32>) ->  anyhow::Result<()> {
 

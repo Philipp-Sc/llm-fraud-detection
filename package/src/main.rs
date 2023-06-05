@@ -57,14 +57,13 @@ fn main_00() -> anyhow::Result<()> {
 }
 
 /*_training*/
-fn main_9999() -> anyhow::Result<()> {
+fn main() -> anyhow::Result<()> {
 
     let training_data_paths = [
       "data_gen_v3_(enronSpamSubset).json",
       "data_gen_v3_(lingSpam).json",
       "data_gen_v3_(smsspamcollection).json",
       "data_gen_v3_(completeSpamAssassin).json",
-      "data_gen_v3_(governance_proposal_spam_ham).json",
       "data_gen_v3_(governance_proposal_spam_ham).json"];
     
     rust_bert_fraud_detection_tools::build::create_classification_model(&training_data_paths)?;
@@ -85,6 +84,15 @@ fn main_9999() -> anyhow::Result<()> {
     Ok(())
 }
 
+
+fn main_9981() -> anyhow::Result<()>{
+    let predictions = rust_bert_fraud_detection_tools::build::naive_bayes::predict(SENTENCES.iter().map(|&s| s.to_string()).collect::<Vec<String>>())?;
+    println!("Predictions:\n{:?}",predictions);
+    println!("Labels:\n[1.0, 0.0, 1.0, 0.0, 1.0, 0.0]");
+    Ok(())
+}
+
+/*
 fn main() -> anyhow::Result<()>{
     let paths= vec![
         "./dataset/enronSpamSubset.csv",
@@ -102,7 +110,7 @@ fn main() -> anyhow::Result<()>{
         "./dataset/governance_proposal_spam_ham.csv"];
     create_naive_bayes_model(&paths,&test_paths)
 }
-
+*/
 /*_generate_sentiments_and_topics*/
 fn main_888() -> anyhow::Result<()> {
 
