@@ -9,6 +9,12 @@
 Robust semi-supervised fraud detection using Rust native NLP pipelines.
 # About
 **rust-bert-fraud-detection** uses the NLP pipelines from [rust-bert](https://github.com/guillaume-be/rust-bert) to extract topics and sentiment from the given text. A simple [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) is trained to predict fraud/ham. The training data is generated using a diverse collection of commonly used spam/ham datasets (LingSpam, EnronSpam, Spam Assassin Dataset, SMSSpamCollection, YoutubeSpam, ...). Since the [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) is trained on latent features ([topics/fraud indicators](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/mod.rs)) and NOT on a text encoding (such as Bag of Words) much less datapoints are needed to build a general model which should work better accross different domains (e.g emails, websites and governance proposals).
+#
+Nonetheless **rust-bert-fraud-detection** uses an additional measure to improve the performance further:    
+
+['hard-coded' features](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/feature_engineering/mod.rs), they include word count information, punctuation, number, url and upper-case counts. And additionally the prediction of a [Naive Bayes classifier](https://docs.rs/crate/linfa-bayes/latest) which was trained on a Bag of Words representation of the used spam/ham dataset. Naive Bayes classifier are well known for their effectiveness in text related tasks especially spam detection.   
+This addition of a Naive Bayes classifier with an `f1 score of 0.84` improves the accuracy of the final Random Forest Regressor from 97% towards ~99%.
+
 # 
 This project is part of [CosmosRustBot](https://github.com/Philipp-Sc/cosmos-rust-bot), which provides Governance Proposal Notifications for Cosmos Blockchains. The goal is automatically detect fraudulent and deceitful proposals to prevent users falling for crypto scams. The current model is very effective in detecting fake governance proposals.
 
@@ -45,7 +51,8 @@ fn main() -> anyhow::Result<()> {
 
 ```
 ``` 
-[0.8714285714285714, 0.45833333333333326, 0.4640625000000002, 0.14419642857142864, 0.8043154761904762, 0.19107142857142856]
+[0.6944196428571429, 0.07700892857142856, 0.4921875, 0.03645833333333334, 0.8056919642857142, 0.14174107142857142]
+
 [1.0, 0.0, 1.0, 0.0, 1.0, 0.0]
 ```
 # Training Data
@@ -90,56 +97,58 @@ TOTAL HAM: 17680
 Trained and tested with the training data above
 ``` 
 ```
-true p(>=0.1)==label 20809
-false 5640
-false positive 5640
+true p(>=0.1)==label 23274
+false 1219
+false positive 1219
 
-true p(>=0.2)==label 24261
-false 2188
-false positive 2188
+true p(>=0.2)==label 24028
+false 465
+false positive 465
 
-true p(>=0.3)==label 25586
-false 863
-false positive 848
+true p(>=0.3)==label 24209
+false 284
+false positive 243
 
-true p(>=0.4)==label 25982
-false 467
-false positive 327
+true p(>=0.4)==label 24227
+false 266
+false positive 143
 
-true p(>=0.5)==label 25842
-false 607
-false positive 113
+true p(>=0.5)==label 24188
+false 305
+false positive 92
 
-true p(>=0.6)==label 25298
-false 1151
-false positive 25
+true p(>=0.6)==label 24114
+false 379
+false positive 59
 
-true p(>=0.7)==label 24386
-false 2063
-false positive 3
+true p(>=0.7)==label 24014
+false 479
+false positive 23
 
-true p(>=0.8)==label 23122
-false 3327
+true p(>=0.8)==label 23822
+false 671
+false positive 2
+
+true p(>=0.9)==label 23299
+false 1194
 false positive 0
 
-true p(>=0.9)==label 21315
-false 5134
-false positive 0
 
 
 ```
-- p(>=0.4) has the best performance (98,2%).
+- p(>=0.4) has the best performance (98,91%).
 
 ```Note: This makes sense because the training data contains more ham than spam entries.```
-- p(>=0.5) has the second best performance (97,7%), with a lot less **false positives** (ham incorrectly classified as spam).
-- p(>=0.7) has the fewest **false positives** and a performance of 92,2%.
+- p(>=0.5) has the second best performance (98,75%), with a lot less **false positives** (ham incorrectly classified as spam).
+- p(>=0.7) has the fewest **false positives** and a performance of 98,04%.
 
 ```If you are okay with few emails incorrectly not classified as fraud and do not want any ham email classified as fraud, select the later.```
 # 
 - **rust-bert-fraud-detection** can be further improved by finding a better set of [topics/fraud indicators](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/mod.rs) to be extracted and used for the classification. 
 - Using a better model for the topic extraction and sentiment prediction should also improve the fraud detection.
 - Replacing the [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) with a better model (Neural Network) might also improve the performance. 
-- More (domain specific) training data is always good.
+- Improving the performance of the [Naive Bayes classifier](https://docs.rs/crate/linfa-bayes/latest), including adjustments to the used count vectorizer.
+- More (domain specific) training data is always good. (All models were only trained on English text.)
 
 # Docker
 ```sudo docker build -t rust-bert-fraud-detection .``` (build image)
