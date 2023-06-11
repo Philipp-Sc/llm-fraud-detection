@@ -16,6 +16,7 @@ lazy_static::lazy_static! {
 
         static ref RE_PUNCTUATION: regex::Regex = regex::Regex::new(r"[[:punct:]]+").unwrap();
 
+        static ref RE_EMOJI: regex::Regex = regex::Regex::new(r"\p{Emoji}").unwrap();
      }
 
 pub fn get_features(text: String) -> Vec<f64> {
@@ -38,6 +39,7 @@ pub fn get_features(text: String) -> Vec<f64> {
     features.push(RE_UPPER_CASE_WORD.captures_iter(&text).count() as f64);
     features.push(RE_NON_STANDARD.captures_iter(&text).count() as f64);
     features.push(RE_PUNCTUATION.captures_iter(&text).count() as f64);
+    features.push(RE_EMOJI.captures_iter(&text).count() as f64);
 
     features
 }
