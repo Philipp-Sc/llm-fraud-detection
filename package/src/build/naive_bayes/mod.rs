@@ -17,7 +17,7 @@ use smartcore::naive_bayes::categorical::CategoricalNB;
 
 lazy_static::lazy_static! {
         static ref GAUSSIAN_NB_MODEL: Arc<Mutex<GaussianNb<f32, usize>>> = Arc::new(Mutex::new(get_gaussian_nb_model().unwrap()));
-        static ref CATEGORICAL_NB_MODEL: Arc<Mutex<GaussianNb<f32, usize>>> = Arc::new(Mutex::new(get_categorical_nb_model().unwrap()));
+        static ref CATEGORICAL_NB_MODEL: Arc<Mutex<CategoricalNB<f32, DenseMatrix<f32>>>> = Arc::new(Mutex::new(get_categorical_nb_model().unwrap()));
         static ref VECTORIZER: Arc<Mutex<CountVectorizer>> = Arc::new(Mutex::new(get_vectorizer().unwrap()));
 
     }
