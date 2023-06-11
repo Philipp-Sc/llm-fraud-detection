@@ -12,6 +12,7 @@ use regex::Regex;
 
 use std::sync::Arc;
 use std::sync::Mutex;
+use smartcore::linalg::naive::dense_matrix::DenseMatrix;
 use smartcore::naive_bayes::categorical::CategoricalNB;
 
 lazy_static::lazy_static! {
@@ -266,8 +267,6 @@ pub fn update_categorical_naive_bayes_model(x_dataset: Vec<String>, y_dataset: V
     );
     // Transforming gives a sparse dataset, we make it dense in order to be able to fit the Naive Bayes model
     let training_records = vectorizer.transform(&texts).to_dense();
-    // Currently linfa only allows real valued features so we have to transform the integer counts to floats
-    let training_records = training_records.mapv(|c| c as f32);
 
     println!(
         "We obtain a {}x{} matrix of counts for the vocabulary entries",
@@ -278,8 +277,6 @@ pub fn update_categorical_naive_bayes_model(x_dataset: Vec<String>, y_dataset: V
 
     // Transforming gives a sparse dataset, we make it dense in order to be able to fit the Naive Bayes model
     let test_records = vectorizer.transform(&test_texts).to_dense();
-    // Currently linfa only allows real valued features so we have to transform the integer counts to floats
-    let test_records = test_records.mapv(|c| c as f32);
 
     println!(
         "We obtain a {}x{} test matrix of counts for the vocabulary entries",
@@ -289,9 +286,10 @@ pub fn update_categorical_naive_bayes_model(x_dataset: Vec<String>, y_dataset: V
     println!();
 
 
+    let x = DenseMatrix::<usize>::from_2d_array(&training_records.outer_iter().map(|row| row.to_vec()).collect());
 
-    let nb = CategoricalNB::fit(&training_records.into_raw_vec(), &labels.into_raw_vec(), Default::default()).unwrap();
-    let prediction = nb.predict(&test_records.into_raw_vec()).unwrap();
+    let nb = CategoricalNB::fit(&x, &labels.into_raw_vec(), Default::default()).unwrap();
+    let prediction = nb.predict(&x).unwrap();
 
     //fs::write("./GaussianNbModel.bin", &serde_json::to_string(&model)?).ok();
 
