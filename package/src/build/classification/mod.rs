@@ -4,6 +4,9 @@ use smartcore::linalg::naive::dense_matrix::DenseMatrix;
 use smartcore::ensemble::random_forest_regressor::RandomForestRegressor;
 //use smartcore::ensemble::random_forest_classifier::RandomForestClassifier;
 
+use std::sync::Arc;
+use std::sync::Mutex;
+
 use std::fs;
 
 lazy_static::lazy_static! {
