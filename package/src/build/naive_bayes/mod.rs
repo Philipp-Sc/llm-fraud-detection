@@ -292,9 +292,26 @@ pub fn update_categorical_naive_bayes_model(x_dataset: Vec<String>, y_dataset: V
     let nb = CategoricalNB::fit(&x, &labels.into_raw_vec().into_iter().map(|x| x as f32).collect::<Vec<f32>>(), Default::default()).unwrap();
     let prediction = nb.predict(&x).unwrap();
 
-    //fs::write("./GaussianNbModel.bin", &serde_json::to_string(&model)?).ok();
+    let usize_vec: Vec<usize> = prediction.iter().map(|&x| x as usize).collect();
+    let prediction = ArrayBase::<OwnedRepr<usize>, Ix1>::from_vec(usize_vec);
 
-    println!("done");
+    // Displaying predictions
+    println!("Predictions:");
+    let num_predictions = 5;
+    for i in 0..num_predictions {
+        let prediction = prediction.index_axis(Axis(0), i);
+        let true_label = test_labels[i];
+        let text = test_texts[i].to_owned();
+        println!("Text: {}, Prediction: {}, True Label: {}", text, prediction, true_label);
+    }
+    println!();
+
+    let cm = prediction
+        .confusion_matrix(&test_ds)
+        .unwrap();
+    // 0.9944
+    let accuracy = cm.f1_score();
+    println!("The fitted model has a training f1 score of {}", accuracy);
 
 
     Ok(())
