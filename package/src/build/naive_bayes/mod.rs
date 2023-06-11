@@ -286,10 +286,14 @@ pub fn update_categorical_naive_bayes_model(x_dataset: Vec<String>, y_dataset: V
     println!();
 
     let x_data: Vec<Vec<f32>> = training_records.outer_iter().map(|row| row.to_vec().into_iter().map(|x| x as f32).collect::<Vec<f32>>()).collect();
-
     let x = DenseMatrix::<f32>::from_2d_vec(&x_data);
 
     let nb = CategoricalNB::fit(&x, &labels.into_raw_vec().into_iter().map(|x| x as f32).collect::<Vec<f32>>(), Default::default()).unwrap();
+
+    let x_data: Vec<Vec<f32>> = test_records.outer_iter().map(|row| row.to_vec().into_iter().map(|x| x as f32).collect::<Vec<f32>>()).collect();
+    let x = DenseMatrix::<f32>::from_2d_vec(&x_data);
+    let test_ds = DatasetView::new(test_records.view(), test_labels.view());
+
     let prediction = nb.predict(&x).unwrap();
 
     let usize_vec: Vec<usize> = prediction.iter().map(|&x| x as usize).collect();
