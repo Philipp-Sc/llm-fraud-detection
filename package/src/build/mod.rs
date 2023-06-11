@@ -150,8 +150,8 @@ pub fn create_naive_bayes_model(paths: &[&str], test_paths: &[&str]) -> anyhow::
     let test_x_dataset= dataset.iter().map(|x| x.0.clone()).collect::<Vec<String>>();
     let test_y_dataset= dataset.into_iter().map(|x| if x.1 {1} else {0}).collect::<Vec<i32>>();
 
-    //naive_bayes::update_naive_bayes_model(x_dataset,y_dataset,test_x_dataset,test_y_dataset)?;
-    naive_bayes::update_categorical_naive_bayes_model(x_dataset,y_dataset,test_x_dataset,test_y_dataset)?;
+    naive_bayes::update_naive_bayes_model(x_dataset,y_dataset,test_x_dataset,test_y_dataset)?;
+    naive_bayes::update_categorical_naive_bayes_model(x_dataset.clone(),y_dataset.clone(),test_x_dataset.clone(),test_y_dataset.clone())?;
     //classification::test_linear_regression_model(&x_dataset,&y_dataset)?;
 
     Ok(())
