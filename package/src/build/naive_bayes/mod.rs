@@ -79,7 +79,7 @@ pub fn categorical_nb_model_predict(x_dataset: Vec<String>) ->  anyhow::Result<V
 
     let model = CATEGORICAL_NB_MODEL.try_lock().unwrap();
 
-    let prediction = model.predict(&x).into_raw_vec();
+    let prediction = model.predict(&x)?.into_iter().map(|x| x as usize).collect();
     Ok(prediction)
 
 }
