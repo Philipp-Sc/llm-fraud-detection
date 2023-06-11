@@ -6,6 +6,18 @@ use smartcore::ensemble::random_forest_regressor::RandomForestRegressor;
 
 use std::fs;
 
+lazy_static::lazy_static! {
+        static ref MODEL: Arc<Mutex<RandomForestRegressor<f64>>> = Arc::new(Mutex::new(get_model().unwrap()));
+    }
+
+fn get_model() -> anyhow::Result<RandomForestRegressor<f64>>{
+    let model: RandomForestRegressor<f64> = match serde_json::from_str(&fs::read_to_string("./RandomForestRegressor.bin")?)? {
+        Some(lr) => { lr },
+        None => { return Err(anyhow::anyhow!("Error: unable to load './RandomForestRegressor.bin'"));}
+    };
+    Ok(model)
+}
+
 pub fn predict(x_dataset: &Vec<Vec<f64>>) ->  anyhow::Result<Vec<f64>> {
 
     let x = DenseMatrix::from_2d_array(&x_dataset.iter().map(|x| &x[..]).collect::<Vec<&[f64]>>()[..]);
@@ -20,12 +32,10 @@ pub fn predict(x_dataset: &Vec<Vec<f64>>) ->  anyhow::Result<Vec<f64>> {
             Some(lr) => { lr },
             None => { return Err(anyhow::anyhow!("Error: unable to load './RandomForestClassifier.bin'"));}
         };*/
-    let lr: RandomForestRegressor<f64> = match serde_json::from_str(&fs::read_to_string("./RandomForestRegressor.bin")?)? {
-        Some(lr) => { lr },
-        None => { return Err(anyhow::anyhow!("Error: unable to load './RandomForestRegressor.bin'"));}
-    };
 
-    Ok(lr.predict(&x)?)
+    let model = MODEL.try_lock().unwrap();
+
+    Ok(model.predict(&x)?)
 }
 
 
@@ -67,15 +77,12 @@ pub fn test_linear_regression_model(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f
                None => { return Err(anyhow::anyhow!("Error: unable to load './RandomForestClassifier.bin'"));}
            };
        */
-    let lr: RandomForestRegressor<f64> = match serde_json::from_str(&fs::read_to_string("./RandomForestRegressor.bin")?)? {
-        Some(lr) => { lr },
-        None => { return Err(anyhow::anyhow!("Error: unable to load './RandomForestRegressor.bin'"));}
-    };
 
     let x = DenseMatrix::from_2d_array(&x_dataset.iter().map(|x| &x[..]).collect::<Vec<&[f64]>>()[..]);
     let y = y_dataset;
 
-    let y_hat = lr.predict(&x).unwrap();
+    let model = MODEL.try_lock().unwrap();
+    let y_hat = model.predict(&x).unwrap();
 
     for i in 0..y.len() {
         let p = if y_hat[i] > 0.5 {1.0}else{0.0};
