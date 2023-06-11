@@ -236,19 +236,6 @@ pub fn update_categorical_naive_bayes_model(x_dataset: Vec<String>, y_dataset: V
 
     println!();
 
-    // Counting label categories in the test dataset
-    let mut test_label_counts: HashMap<usize, usize> = HashMap::new();
-    for &label in test_labels.iter() {
-        let count = test_label_counts.entry(label).or_insert(0);
-        *count += 1;
-    }
-
-    println!("Label category counts in the test dataset:");
-    for (label, count) in &test_label_counts {
-        println!("Label: {}, Count: {}", label, count);
-    }
-    println!();
-
     let vectorizer = VECTORIZER.try_lock().unwrap();
 
 /*
@@ -260,7 +247,7 @@ pub fn update_categorical_naive_bayes_model(x_dataset: Vec<String>, y_dataset: V
         .n_gram_range(1,3)
         .fit(&texts).unwrap();
 */
-    
+
     println!(
         "We obtain a vocabulary with {} entries",
         vectorizer.nentries()
@@ -272,7 +259,6 @@ pub fn update_categorical_naive_bayes_model(x_dataset: Vec<String>, y_dataset: V
     */
 
     //fs::write("./CountVectorizer.bin", &serde_json::to_string(&vectorizer)?).ok();
-
 
     println!();
     println!(
@@ -290,19 +276,6 @@ pub fn update_categorical_naive_bayes_model(x_dataset: Vec<String>, y_dataset: V
     );
     println!();
 
-    // Displaying sample entries of the training data
-    println!("Sample entries of the training data:");
-    let num_samples = 5;
-    for i in 0..num_samples {
-        let sample_entry = training_records.index_axis(Axis(0), i);
-        let label = labels[i];
-        let text = texts[i].to_owned();
-        println!("Text: {}, Data: {:?}, Label: {}", text, sample_entry, label);
-    }
-    println!();
-
-    let ds = DatasetView::new(training_records.view(), labels.view());
-
     // Transforming gives a sparse dataset, we make it dense in order to be able to fit the Naive Bayes model
     let test_records = vectorizer.transform(&test_texts).to_dense();
     // Currently linfa only allows real valued features so we have to transform the integer counts to floats
@@ -316,43 +289,14 @@ pub fn update_categorical_naive_bayes_model(x_dataset: Vec<String>, y_dataset: V
     println!();
 
 
-    // Displaying sample entries of the test data
-    println!("Sample entries of the test data:");
-    for i in 0..num_samples {
-        let sample_entry = test_records.index_axis(Axis(0), i);
-        let label = test_labels[i];
-        let text = test_texts[i].to_owned();
-        println!("Text: {}, Data: {:?}, Label: {}", text, sample_entry, label);
-    }
-    println!();
 
-    let test_ds = DatasetView::new(test_records.view(), test_labels.view());
-
-
-
-    let nb = CategoricalNB::fit(&ds.records, &ds.targets, Default::default()).unwrap();
-    let prediction = nb.predict(&test_ds.records).unwrap();
+    let nb = CategoricalNB::fit(&training_records.into_raw_vec(), &labels.into_raw_vec(), Default::default()).unwrap();
+    let prediction = nb.predict(&test_records.into_raw_vec()).unwrap();
 
     //fs::write("./GaussianNbModel.bin", &serde_json::to_string(&model)?).ok();
 
+    println!("done");
 
-    // Displaying predictions
-    println!("Predictions:");
-    let num_predictions = 5;
-    for i in 0..num_predictions {
-        let prediction = prediction.index_axis(Axis(0), i);
-        let true_label = test_labels[i];
-        let text = test_texts[i].to_owned();
-        println!("Text: {}, Prediction: {}, True Label: {}", text, prediction, true_label);
-    }
-    println!();
-
-    let cm = prediction
-        .confusion_matrix(&test_ds)
-        .unwrap();
-    // 0.9944
-    let accuracy = cm.f1_score();
-    println!("The fitted model has a training f1 score of {}", accuracy);
 
     Ok(())
 }
