@@ -23,7 +23,7 @@ pub fn get_features(text: String) -> Vec<f64> {
     let mut features = Vec::new();
     
     // Naive Bayes Spam Prediction
-    features.push(super::naive_bayes::predict(vec![text.clone()]).unwrap()[0] as f64);
+    features.push(super::naive_bayes::categorical_nb_model_predict(vec![text.clone()]).unwrap()[0] as f64);
 
 
     let word_count = words_count::count(&text);

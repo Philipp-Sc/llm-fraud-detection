@@ -16,18 +16,25 @@ use smartcore::linalg::naive::dense_matrix::DenseMatrix;
 use smartcore::naive_bayes::categorical::CategoricalNB;
 
 lazy_static::lazy_static! {
-        static ref MODEL: Arc<Mutex<GaussianNb<f32, usize>>> = Arc::new(Mutex::new(get_model().unwrap()));
+        static ref GAUSSIAN_NB_MODEL: Arc<Mutex<GaussianNb<f32, usize>>> = Arc::new(Mutex::new(get_gaussian_nb_model().unwrap()));
+        static ref CATEGORICAL_NB_MODEL: Arc<Mutex<GaussianNb<f32, usize>>> = Arc::new(Mutex::new(get_categorical_nb_model().unwrap()));
         static ref VECTORIZER: Arc<Mutex<CountVectorizer>> = Arc::new(Mutex::new(get_vectorizer().unwrap()));
 
     }
 
-fn get_model() -> anyhow::Result<GaussianNb<f32, usize>>{
+fn get_categorical_nb_model() -> anyhow::Result<GaussianNb<f32, usize>>{
+    let model: GaussianNb<f32, usize> = match serde_json::from_str(&fs::read_to_string("./CategoricalNbModel.bin")?)? {
+        Some(lr) => { lr },
+        None => { return Err(anyhow::anyhow!("Error: unable to load './CategoricalNbModel.bin'"));}
+    };
+    Ok(model)
+}
+fn get_gaussian_nb_model() -> anyhow::Result<GaussianNb<f32, usize>>{
     let model: GaussianNb<f32, usize> = match serde_json::from_str(&fs::read_to_string("./GaussianNbModel.bin")?)? {
         Some(lr) => { lr },
         None => { return Err(anyhow::anyhow!("Error: unable to load './GaussianNbModel.bin'"));}
     };
     Ok(model)
-
 }
 fn get_vectorizer() -> anyhow::Result<CountVectorizer> {
     let vectorizer: CountVectorizer =  match serde_json::from_str(&fs::read_to_string("./CountVectorizer.bin")?)? {
@@ -45,7 +52,7 @@ fn remove_non_letters(text: &str) -> String {
     cleaned_text
 }
 
-pub fn predict(x_dataset: Vec<String>) ->  anyhow::Result<Vec<usize>> {
+pub fn gaussian_nb_model_predict(x_dataset: Vec<String>) ->  anyhow::Result<Vec<usize>> {
 
     let vectorizer = VECTORIZER.try_lock().unwrap();
     
@@ -53,9 +60,26 @@ pub fn predict(x_dataset: Vec<String>) ->  anyhow::Result<Vec<usize>> {
 
     let test_records = vectorizer.transform(&test_texts).to_dense();
     let test_records = test_records.mapv(|c| c as f32);
-    let model = MODEL.try_lock().unwrap();
+    let model = GAUSSIAN_NB_MODEL.try_lock().unwrap();
 
     let prediction = model.predict(&test_records).into_raw_vec();
+    Ok(prediction)
+
+}
+
+pub fn categorical_nb_model_predict(x_dataset: Vec<String>) ->  anyhow::Result<Vec<usize>> {
+
+    let vectorizer = VECTORIZER.try_lock().unwrap();
+
+    let test_texts: ArrayBase<OwnedRepr<String>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((x_dataset.len(),), x_dataset).unwrap();
+    let test_records = vectorizer.transform(&test_texts).to_dense();
+
+    let x_data: Vec<Vec<f32>> = test_records.outer_iter().map(|row| row.to_vec().into_iter().map(|x| x as f32).collect::<Vec<f32>>()).collect();
+    let x = DenseMatrix::<f32>::from_2d_vec(&x_data);
+
+    let model = CATEGORICAL_NB_MODEL.try_lock().unwrap();
+
+    let prediction = model.predict(&x).into_raw_vec();
     Ok(prediction)
 
 }
@@ -289,6 +313,7 @@ pub fn update_categorical_naive_bayes_model(x_dataset: Vec<String>, y_dataset: V
     let x = DenseMatrix::<f32>::from_2d_vec(&x_data);
 
     let nb = CategoricalNB::fit(&x, &labels.into_raw_vec().into_iter().map(|x| x as f32).collect::<Vec<f32>>(), Default::default()).unwrap();
+    fs::write("./CategoricalNbModel.bin", &serde_json::to_string(&nb)?).ok();
 
     let x_data: Vec<Vec<f32>> = test_records.outer_iter().map(|row| row.to_vec().into_iter().map(|x| x as f32).collect::<Vec<f32>>()).collect();
     let x = DenseMatrix::<f32>::from_2d_vec(&x_data);
