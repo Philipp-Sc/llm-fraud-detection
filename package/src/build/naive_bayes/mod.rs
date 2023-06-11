@@ -285,10 +285,11 @@ pub fn update_categorical_naive_bayes_model(x_dataset: Vec<String>, y_dataset: V
     );
     println!();
 
+    let x_data = training_records.outer_iter().map(|row| row.to_vec().into_iter().map(|x| x as f32).collect::<[f32]>()).collect();
 
-    let x = DenseMatrix::<f32>::from_2d_array(&training_records.outer_iter().map(|row| row.to_vec().into_iter().map(|x| x as f32).collect()).collect());
+    let x = DenseMatrix::<f32>::from_2d_array(&x_data);
 
-    let nb = CategoricalNB::fit(&x, &labels.into_raw_vec().into_iter().map(|x| x as f32).collect(), Default::default()).unwrap();
+    let nb = CategoricalNB::fit(&x, &labels.into_raw_vec().into_iter().map(|x| x as f32).collect::<Vec<f32>>(), Default::default()).unwrap();
     let prediction = nb.predict(&x).unwrap();
 
     //fs::write("./GaussianNbModel.bin", &serde_json::to_string(&model)?).ok();
