@@ -22,8 +22,8 @@ lazy_static::lazy_static! {
 
     }
 
-fn get_categorical_nb_model() -> anyhow::Result<GaussianNb<f32, usize>>{
-    let model: GaussianNb<f32, usize> = match serde_json::from_str(&fs::read_to_string("./CategoricalNbModel.bin")?)? {
+fn get_categorical_nb_model() -> anyhow::Result<CategoricalNB<f32, DenseMatrix<f32>>>{
+    let model: CategoricalNB<f32, DenseMatrix<f32>> = match serde_json::from_str(&fs::read_to_string("./CategoricalNbModel.bin")?)? {
         Some(lr) => { lr },
         None => { return Err(anyhow::anyhow!("Error: unable to load './CategoricalNbModel.bin'"));}
     };
