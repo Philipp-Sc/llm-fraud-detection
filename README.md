@@ -12,9 +12,9 @@ Robust semi-supervised fraud detection using Rust native NLP pipelines.
 #
 Nonetheless **rust-bert-fraud-detection** uses an additional measure to improve the performance further:    
 
-['hard-coded' features](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/feature_engineering/mod.rs), they include word count information, punctuation, number, url and upper-case counts. This also includes a count of red/green flags, i.e words that are known to have a high likelihood being only present in spam/ham. And additionally the prediction of a [Categorical Naive Bayes classifier](https://docs.rs/smartcore/latest/smartcore/naive_bayes/categorical/struct.CategoricalNB.html) which was trained on a Bag of Words representation of the used spam/ham dataset. Naive Bayes classifier are well known for their effectiveness in text related tasks especially spam detection.   
-In the tests the Categorical variant performed better than the [Gaussian Naive Bayes classifier](https://docs.rs/crate/linfa-bayes/latest) (F1-score of `0.90` vs `0.84`).
-This addition of a Naive Bayes classifier improves the accuracy of the final Random Forest Regressor from 97% towards 99%.
+['hard-coded' features](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/feature_engineering/mod.rs), they include word count information, punctuation, number, url, emoji and upper-case counts. This also includes a count of red/green flags, i.e words that are known to have a high likelihood being only present in spam/ham. And additionally the prediction of a [Categorical Naive Bayes classifier](https://docs.rs/smartcore/latest/smartcore/naive_bayes/categorical/struct.CategoricalNB.html) which was trained on a Bag of Words representation of the used spam/ham dataset. Naive Bayes classifier are well known for their effectiveness in text related tasks especially spam detection.   
+In the tests the Categorical variant performed better than the [Gaussian Naive Bayes classifier](https://docs.rs/crate/linfa-bayes/latest) (F1-score of `0.90` vs `0.84`), but both predictions were added to the feature vector.
+This addition of the Naive Bayes predictions improves the accuracy of the final Random Forest Regressor from 97% towards 99%.
 
 # 
 This project is part of [CosmosRustBot](https://github.com/Philipp-Sc/cosmos-rust-bot), which provides Governance Proposal Notifications for Cosmos Blockchains. The goal is automatically detect fraudulent and deceitful proposals to prevent users falling for crypto scams. The current model is very effective in detecting fake governance proposals.
@@ -98,49 +98,50 @@ TOTAL HAM: 17680
 Trained and tested with the training data above
 ``` 
 ```
-true p(>=0.1)==label 22062
-false 2431
-false positive 2431
+true p(>=0.1)==label 23515
+false 978
+false positive 978
 
-true p(>=0.2)==label 23727
-false 766
-false positive 765
+true p(>=0.2)==label 24112
+false 381
+false positive 379
 
-true p(>=0.3)==label 24195
-false 298
-false positive 276
+true p(>=0.3)==label 24255
+false 238
+false positive 217
 
-true p(>=0.4)==label 24240
-false 253
-false positive 119
+true p(>=0.4)==label 24276
+false 217
+false positive 118
 
-true p(>=0.5)==label 24097
-false 396
-false positive 60
+true p(>=0.5)==label 24238
+false 255
+false positive 66
 
-true p(>=0.6)==label 23797
-false 696
-false positive 33
+true p(>=0.6)==label 24184
+false 309
+false positive 38
 
-true p(>=0.7)==label 23466
-false 1027
-false positive 6
+true p(>=0.7)==label 24079
+false 414
+false positive 12
 
-true p(>=0.8)==label 23001
-false 1492
+true p(>=0.8)==label 23851
+false 642
+false positive 1
+
+true p(>=0.9)==label 23317
+false 1176
 false positive 0
 
-true p(>=0.9)==label 22332
-false 2161
-false positive 0
 
 
 ```
-- p(>=0.4) has the best performance (98,96%).
+- p(>=0.4) has the best performance (99,11%).
 
 ```Note: This makes sense because the training data contains more ham than spam entries.```
-- p(>=0.5) has the second best performance (98,38%), with a lot less **false positives** (ham incorrectly classified as spam).
-- p(>=0.7) has the fewest **false positives** and a performance of 95,80%.
+- p(>=0.5) has the second best performance (98,95%), with a lot less **false positives** (ham incorrectly classified as spam).
+- p(>=0.7) has the fewest **false positives** and a performance of 98,30%.
 
 ```If you are okay with few emails incorrectly not classified as fraud and do not want any ham email classified as fraud, select the later.```
 # 
