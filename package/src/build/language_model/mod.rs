@@ -21,7 +21,7 @@ pub fn get_topic_predictions(input: &[&str], topics: &[&str])  -> anyhow::Result
             format!("This example is about {}.", label)
         })),
         128,
-    );
+    )?;
     Ok(output.iter().map(|x| x.iter().map(|y| y.score).collect::<Vec<f64>>()).collect())
 }
 
@@ -32,7 +32,7 @@ pub fn extract_topics(dataset: &Vec<(&str,&bool)>, topics: &[&str], path: Option
 
     let mut list_outputs: Vec<Vec<Vec<Label>>> = Vec::new();
 
-    let chunks = 1;
+    let chunks = 16;
     let total_batches = dataset.len() / chunks;
     let mut completed_batches = 0;
 
@@ -47,7 +47,7 @@ pub fn extract_topics(dataset: &Vec<(&str,&bool)>, topics: &[&str], path: Option
                 format!("This example is about {}.", label)
             })),
             128,
-        );
+        )?;
         list_outputs.push(output);
         completed_batches += 1;
 
@@ -75,7 +75,7 @@ pub fn extract_topic_pairs(dataset: &Vec<(&str,&bool)>, topic_pairs: &[[&str;2];
 
     let mut list_outputs: Vec<Vec<Vec<Label>>> = Vec::new();
 
-    let chunks = 1;
+    let chunks = 256;
 
     let total_batches = dataset.len() / chunks;
     let mut completed_batches = 0;
@@ -97,7 +97,7 @@ pub fn extract_topic_pairs(dataset: &Vec<(&str,&bool)>, topic_pairs: &[[&str;2];
                     format!("This example is about {}.", label)
                 }))*/
                 128,
-            );
+            )?;
             for i in 0..output.len(){
                 output[i].append(&mut output_for_pair[i]);
             }
