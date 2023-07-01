@@ -26,9 +26,35 @@ pub const SENTENCES: [&str;6] = [
 //          sudo docker stop CONTAINER_ID
 // Run service test:
 //      sudo docker run -it --rm -v "$(pwd)/rustbert_cache":/usr/rustbert_cache -v "$(pwd)/target":/usr/target -v "$(pwd)/cargo_home":/usr/cargo_home -v "$(pwd)/package":/usr/workspace -v "$(pwd)/tmp":/usr/workspace/tmp -v "$(pwd)/socket_ipc":/usr/socket_ipc rust-bert-fraud-detection cargo run --release test_service
-fn main_00() -> anyhow::Result<()> {
 
+fn main() -> anyhow::Result<()> {
     let args: Vec<String> = env::args().collect();
+
+    if args.len() <= 1 {
+        println!("No command specified.");
+        return Ok(());
+    }
+
+    let command = &args[1];
+
+    match command.as_str() {
+        "naive_bayes_train" => {naive_bayes_train();},
+        "naive_bayes_test" => {naive_bayes_test();},
+        "training" => {training();},
+        "generate_sentiments_and_topics" => {generate_sentiments_and_topics();},
+        "service" => {service();},
+        _ => {panic!()}
+    }
+
+    Ok(())
+}
+
+fn service() -> anyhow::Result<()> {
+
+    let mut args: Vec<String> = env::args().collect();
+    args.reverse();
+    args.pop();
+    args.reverse();
     println!("env::args().collect(): {:?}",args);
 
     if args.len() <= 1 {
@@ -39,11 +65,11 @@ fn main_00() -> anyhow::Result<()> {
         Ok(())
     }else{
         match args[1].as_str() {
-            "start_service" => {
+            "start" => {
                 spawn_rust_bert_fraud_detection_socket_service("./tmp/rust_bert_fraud_detection_socket").join().unwrap();
                 Ok(())
             },
-            "test_service" => {
+            "test" => {
                 let result = client_send_rust_bert_fraud_detection_request("./tmp/rust_bert_fraud_detection_socket",SENTENCES.iter().map(|x|x.to_string()).collect::<Vec<String>>())?;
                 println!("{:?}",result);
                 Ok(())
@@ -57,7 +83,7 @@ fn main_00() -> anyhow::Result<()> {
 }
 
 /*_training*/
-fn main() -> anyhow::Result<()> {
+fn training() -> anyhow::Result<()> {
 
     let training_data_paths = [
       "data_gen_v3_(enronSpamSubset).json",
@@ -85,15 +111,15 @@ fn main() -> anyhow::Result<()> {
 }
 
 
-fn main_9981() -> anyhow::Result<()>{
-    let predictions = rust_bert_fraud_detection_tools::build::naive_bayes::predict(SENTENCES.iter().map(|&s| s.to_string()).collect::<Vec<String>>())?;
+fn naive_bayes_test() -> anyhow::Result<()>{
+    let predictions = rust_bert_fraud_detection_tools::build::naive_bayes::categorical_nb_model_predict(SENTENCES.iter().map(|&s| s.to_string()).collect::<Vec<String>>())?;
     println!("Predictions:\n{:?}",predictions);
     println!("Labels:\n[1.0, 0.0, 1.0, 0.0, 1.0, 0.0]");
     Ok(())
 }
 
-/*
-fn main() -> anyhow::Result<()>{
+
+fn naive_bayes_train() -> anyhow::Result<()>{
     let paths= vec![
         "./dataset/enronSpamSubset.csv",
         "./dataset/lingSpam.csv",
@@ -110,16 +136,15 @@ fn main() -> anyhow::Result<()>{
         "./dataset/governance_proposal_spam_ham.csv"];
     create_naive_bayes_model(&paths,&test_paths)
 }
-*/
-/*_generate_sentiments_and_topics*/
-fn main_888() -> anyhow::Result<()> {
+
+fn generate_sentiments_and_topics() -> anyhow::Result<()> {
 
     //let training_data_path = "data_gen_v3_(enronSpamSubset).json";
     //rust_bert_fraud_detection_tools::build::create_training_data(vec!["./dataset/enronSpamSubset.csv"],training_data_path)?;
     //let training_data_path = "data_gen_v3_(lingSpam).json";
     //rust_bert_fraud_detection_tools::build::create_training_data(vec!["./dataset/lingSpam.csv"],training_data_path)?;
 
-    let training_data_path = "data_gen_v3_(youtubeSpamCollection).json";
+    let training_data_path = "new_data_gen_v3_(youtubeSpamCollection).json";
     rust_bert_fraud_detection_tools::build::create_training_data(vec!["./dataset/youtubeSpamCollection.csv"],training_data_path)?;
 
 /*    let training_data_path = "data_gen_v3_(smsspamcollection).json";

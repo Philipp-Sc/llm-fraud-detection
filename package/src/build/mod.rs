@@ -2,11 +2,15 @@ use std::fs::File;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 
+pub mod data;
 pub mod classification;
 pub mod language_model;
 pub mod feature_engineering;
 pub mod sentiment;
 pub mod naive_bayes;
+
+
+use data::read_datasets;
 
 pub const FRAUD_INDICATORS: [&str;10] = [
 "(clickbait, suspected spam, fake news)", 
@@ -20,52 +24,18 @@ pub const FRAUD_INDICATORS: [&str;10] = [
 "(giveaway, tokens, airdrops, rewards, gratis, claim now)",  
 "(to hide illegal activity)" ];
 
+pub const FRAUD_INDICATOR_PAIRS: [[&str;2];9] = [
+     ["Clickbait, suspected spam, fake news, sensationalism, hype", "Authentic, verified news/information"],
+     ["Aggressive marketing, advertising, selling, promotion, authoritative, commanding", "Informative content, unbiased information"],
+     ["Call to immediate action", "No urgency or pressure to take action, passive suggestion"],
+     ["Suspicious, questionable, dubious", "Trustworthy, credible, reliable"],
+     ["Untrustworthy, not to be trusted, unreliable source, blacklisted", "Reputable source"],
+     ["Misleading or deceptive information: The product advertisement made false claims about the benefits of the product.", "Accurate, transparent information"],
+     ["Of importance, significant, crucial", "Insignificant, inconsequential"],
+     ["Giveaway, tokens, airdrops, rewards, gratis, claim now", "No incentives or rewards provided"],
+     ["To hide illegal activity", " Legal, lawful activity"]];
+
 // Note: Any additional topic increases the model inference time!
-
-fn read_dataset(path: &str) -> anyhow::Result<Vec<(String,bool)>> {
-
-    let (text_index,label_index) = if path.contains("enronSpamSubset") {
-        (2,3)
-	}else if path.contains("smsspamcollection"){
-	(1,0)
-	}else if path.contains("lingSpam") || path.contains("completeSpamAssassin") || path.contains("governance_proposal_spam_ham"){
-	(1,2)
-	}else{ // youtubeSpamCollection
-        (0,1)
-    };
-
-    let mut training_data: Vec<(String,bool)> = Vec::new();
-
-    let file = File::open(path)?; // 1896/4150
-    let mut rdr = csv::Reader::from_reader(file);
-    for result in rdr.records() {
-        let record = result?;
-        let record_text = record.get(text_index); // (2,3) enronSpamSubset; (1,2) lingSpam / completeSpamAssassin;
-        let record_label = record.get(label_index);
-        if let (Some(text),Some(label)) = (record_text,record_label) {
-            let mut tuple: (String,bool) = (text.to_owned(),false);
-            if label == "1" {
-                tuple.1 = true;
-            }
-            if tuple.0 != "empty" && tuple.0 != "" {
-                training_data.push(tuple);
-            }
-        }
-    }
-    Ok(training_data)
-}
-
-
-pub fn read_datasets(dataset_paths: &[&str]) -> anyhow::Result<Vec<(String,bool)>> {
-    let mut dataset: Vec<(String,bool)> = read_dataset(dataset_paths.get(0).ok_or(anyhow::anyhow!("Error: dataset_paths is empty!'"))?)?;
-    if dataset_paths.len() > 1 {
-        for i in 1..dataset_paths.len() {
-            dataset.append(&mut read_dataset(dataset_paths[i])?);
-        }
-    }
-    Ok(dataset)
-}
-
 
 // https://www.kaggle.com/datasets/nitishabharathi/email-spam-dataset
 // "./dataset/completeSpamAssassin.csv" 1896/4150
@@ -75,22 +45,38 @@ pub fn create_training_data(dataset_paths: Vec<&str>,topics_output_path: &str) -
 
     let mut dataset: Vec<(String,bool)> = read_datasets(&dataset_paths)?;
 
-    println!("count spam: {:?}", dataset.iter().filter(|x| x.1).count());
-    println!("count ham: {:?}", dataset.iter().filter(|x| !x.1).count());
 
+    let spam_count = dataset.iter().filter(|x| x.1).count();
+    let ham_count = dataset.iter().filter(|x| !x.1).count();
+    let total_count = dataset.len();
+
+    let spam_percentage = (spam_count as f64 / total_count as f64) * 100.0;
+    let ham_percentage = (ham_count as f64 / total_count as f64) * 100.0;
+
+    println!("Spam count: {}", spam_count);
+    println!("Ham count: {}", ham_count);
+    println!("===================");
+    println!("Total count: {}", total_count);
+    println!("===================");
+    println!("Spam percentage: {:.2}%", spam_percentage);
+    println!("Ham percentage: {:.2}%\n", ham_percentage);
+
+    /*
     let indices_spam: Vec<usize> = dataset.iter().enumerate().filter(|(i,x)| x.1).map(|(i,_)| i).collect();
     let indices_spam_ham: Vec<usize> = dataset.iter().enumerate().filter(|(i,x)| !x.1)/*.take(indices_spam.len())*/.map(|(i,_)| i).collect();
-    let dataset: Vec<(String,bool)> = vec![
-        indices_spam.iter().map(|&i| &dataset[i]).collect::<Vec<&(String,bool)>>(),
-        indices_spam_ham.iter().map(|&i| &dataset[i]).collect::<Vec<&(String,bool)>>()
+    let dataset: Vec<(&str,bool)> = vec![
+        indices_spam.iter().map(|&i| (dataset[i].0.as_str(),dataset[i].1)).collect::<Vec<(&str,bool)>>(),
+        indices_spam_ham.iter().map(|&i| (dataset[i].0.as_str(),dataset[i].1)).collect::<Vec<(&str,bool)>>()
     ].into_iter().flatten().map(|x| x.clone()).collect();
+    */
 
 
-    println!("len dataset: {:?}", dataset.iter().count());
+    let dataset_view: Vec<(&str,&bool)> = dataset.iter().map(|(text,label)| (text.as_str(),label)).collect();
 
 
-    sentiment::extract_sentiments(&dataset,Some(format!("sentiment_extract_sentiments_{}",topics_output_path)))?;
-    language_model::extract_topics(&dataset,&FRAUD_INDICATORS,Some(format!("language_model_extract_topics_{}",topics_output_path)))?;
+    //sentiment::extract_sentiments(&dataset,Some(format!("sentiment_extract_sentiments_{}",topics_output_path)))?;
+    //language_model::extract_topics(&dataset,&FRAUD_INDICATORS,Some(format!("language_model_extract_topics_{}",topics_output_path)))?;
+    language_model::extract_topic_pairs(&dataset_view,&FRAUD_INDICATOR_PAIRS,Some(format!("language_model_extract_topics_{}",topics_output_path)))?;
 
     Ok(())
 }
@@ -142,15 +128,15 @@ pub fn create_naive_bayes_model(paths: &[&str], test_paths: &[&str]) -> anyhow::
 
     let dataset: Vec<(String,bool)> = read_datasets(paths)?;
 
-    let x_dataset= dataset.iter().map(|x| x.0.clone()).collect::<Vec<String>>();
+    let x_dataset= dataset.iter().map(|x| x.0.to_string()).collect::<Vec<String>>();
     let y_dataset= dataset.into_iter().map(|x| if x.1 {1} else {0}).collect::<Vec<i32>>();
 
     let dataset: Vec<(String,bool)> = read_datasets(test_paths)?;
 
-    let test_x_dataset= dataset.iter().map(|x| x.0.clone()).collect::<Vec<String>>();
+    let test_x_dataset= dataset.iter().map(|x| x.0.to_string()).collect::<Vec<String>>();
     let test_y_dataset= dataset.into_iter().map(|x| if x.1 {1} else {0}).collect::<Vec<i32>>();
 
-    naive_bayes::update_naive_bayes_model(x_dataset,y_dataset,test_x_dataset,test_y_dataset)?;
+    naive_bayes::update_naive_bayes_model(x_dataset.clone(),y_dataset.clone(),test_x_dataset.clone(),test_y_dataset.clone())?;
     naive_bayes::update_categorical_naive_bayes_model(x_dataset.clone(),y_dataset.clone(),test_x_dataset.clone(),test_y_dataset.clone())?;
     //classification::test_linear_regression_model(&x_dataset,&y_dataset)?;
 

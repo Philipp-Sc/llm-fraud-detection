@@ -26,36 +26,102 @@ pub fn get_topic_predictions(input: &[&str], topics: &[&str])  -> anyhow::Result
 }
 
 
-pub fn extract_topics(dataset: &Vec<(String,bool)>, topics: &[&str], path: Option<String>) -> anyhow::Result<Vec<Vec<Label>>> {
+pub fn extract_topics(dataset: &Vec<(&str,&bool)>, topics: &[&str], path: Option<String>) -> anyhow::Result<Vec<Vec<Label>>> {
 
     let sequence_classification_model = SEQUENCE_CLASSIFICATION_MODEL.try_lock().unwrap();
 
     let mut list_outputs: Vec<Vec<Vec<Label>>> = Vec::new();
 
-    let mut count: usize = 0;
     let chunks = 1;
+    let total_batches = dataset.len() / chunks;
+    let mut completed_batches = 0;
+
     for batch in dataset.chunks(chunks) {
 
+        println!("\nProcessing batch {}/{}", completed_batches + 1, total_batches);
+
         let output: Vec<Vec<Label>>= sequence_classification_model.predict_multilabel(
-            &batch.iter().map(|x| x.0.as_str()).collect::<Vec<&str>>()[..],
+            &batch.iter().map(|x| x.0).collect::<Vec<&str>>()[..],
             topics,
             Some(Box::new(|label: &str| {
                 format!("This example is about {}.", label)
             })),
             128,
         );
-        println!("{}",count);
-        count += output.len();
         list_outputs.push(output);
+        completed_batches += 1;
 
         if let Some(ref path) = path {
-            let outputs: Vec<&Vec<Label>> = list_outputs.iter().flatten().collect();
-            let features: Vec<Vec<f64>> = outputs.iter().map(|x| x.iter().map(|y| y.score).collect::<Vec<f64>>()).collect();
+            let features: Vec<Vec<f64>> = list_outputs
+                .iter()
+                .flatten()
+                .map(|x| x.iter().map(|y| y.score).collect::<Vec<f64>>()).collect();
             let json_string = serde_json::json!({"predictions":&features,"dataset":dataset, "topics":topics}).to_string();
 
             fs::write(&path, &json_string).ok();
         }
     }
+
+    println!("Total batches processed: {}", total_batches);
+
+    let outputs: Vec<Vec<Label>> = list_outputs.into_iter().flatten().collect();
+
+    Ok(outputs)
+}
+
+pub fn extract_topic_pairs(dataset: &Vec<(&str,&bool)>, topic_pairs: &[[&str;2];9], path: Option<String>) -> anyhow::Result<Vec<Vec<Label>>> {
+
+    let sequence_classification_model = SEQUENCE_CLASSIFICATION_MODEL.try_lock().unwrap();
+
+    let mut list_outputs: Vec<Vec<Vec<Label>>> = Vec::new();
+
+    let chunks = 1;
+
+    let total_batches = dataset.len() / chunks;
+    let mut completed_batches = 0;
+
+
+    for batch in dataset.iter().map(|x| x.0).collect::<Vec<&str>>().chunks(chunks) {
+
+        println!("\nProcessing batch {}/{}", completed_batches + 1, total_batches);
+
+        let mut output: Vec<Vec<Label>> = Vec::new();
+
+        for topics in topic_pairs {
+
+            print!(".");
+            let mut output_for_pair: Vec<Vec<Label>>= sequence_classification_model.predict_multilabel(
+                &batch,
+                &topics,
+                None, /*Some(Box::new(|label: &str| {
+                    format!("This example is about {}.", label)
+                }))*/
+                128,
+            );
+            for i in 0..output.len(){
+                output[i].append(&mut output_for_pair[i]);
+            }
+        }
+
+        list_outputs.push(output);
+        completed_batches += 1;
+
+    }
+
+    println!("Total batches processed: {}", total_batches);
+
+
+    if let Some(ref path) = path {
+        let features: Vec<Vec<f64>> = list_outputs
+            .iter()
+            .flatten()
+            .map(|x| x.iter().map(|y| y.score).collect::<Vec<f64>>()).collect();
+        let json_string = serde_json::json!({"predictions":&features,"dataset":dataset, "topics":topic_pairs}).to_string();
+
+        fs::write(&path, &json_string).ok();
+    }
+
+
     let outputs: Vec<Vec<Label>> = list_outputs.into_iter().flatten().collect();
 
     Ok(outputs)
