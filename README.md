@@ -13,7 +13,7 @@ Robust semi-supervised fraud detection using Rust native NLP pipelines.
 Nonetheless **rust-bert-fraud-detection** uses an additional measure to improve the performance further:    
 
 ['hard-coded' features](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/feature_engineering/mod.rs), they include word count information, punctuation, number, url, emoji and upper-case counts. This also includes a count of red/green flags, i.e words that are known to have a high likelihood being only present in spam/ham. And additionally the prediction of a [Categorical Naive Bayes classifier](https://docs.rs/smartcore/latest/smartcore/naive_bayes/categorical/struct.CategoricalNB.html) which was trained on a Bag of Words representation of the used spam/ham dataset. Naive Bayes classifier are well known for their effectiveness in text related tasks especially spam detection.   
-In the tests the Categorical variant performed better than the [Gaussian Naive Bayes classifier](https://docs.rs/crate/linfa-bayes/latest) (F1-score of `0.90` vs `0.84`), but both predictions were added to the feature vector.
+In the tests the Categorical variant performed better than the [Gaussian Naive Bayes classifier](https://docs.rs/crate/linfa-bayes/latest) (F1-score of `0.90` vs `0.82`), but both predictions were added to the feature vector.
 This addition of the Naive Bayes predictions improves the accuracy of the final Random Forest Regressor from 97% towards 99%.
 
 # 
@@ -52,7 +52,7 @@ fn main() -> anyhow::Result<()> {
 
 ```
 ``` 
-[0.832266865079365, 0.04352678571428571, 0.5073660714285714, 0.013020833333333332, 0.6826636904761906, 0.15326704545454548]
+[0.7316134185712937, 0.17592926565828138, 0.7340029761904763, 0.010054703866156384, 0.7400900873289896, 0.11926537059602724]
 
 [1.0, 0.0, 1.0, 0.0, 1.0, 0.0]
 ```
@@ -83,67 +83,86 @@ smsspamcollection.csv
 count spam: 747
 count ham: 4825
 
-governance_proposal_spam_ham.csv 
----------------
-count spam: 26
-count ham: 780
+governance_proposal_spam_likelihood.csv 
+--------------- 
 
-TOTAL SPAM: 8771
-TOTAL HAM: 17680
+
+Total SPAM/HAM: 27982
 
 ```
-# Model Performance 
+# Model Eval 
+ 
+Trained and tested with the training data above.
 
 ```
-Trained and tested with the training data above
+Test results on train/test dataset with split ratio 0.7/0.3 
+```
 ``` 
+Threshold >= 0.1: True Positive = 2690, False Positive = 3328, Precision = 0.447, Recall = 0.990, F-Score = 0.616
+Threshold >= 0.2: True Positive = 2612, False Positive = 1811, Precision = 0.591, Recall = 0.961, F-Score = 0.732
+Threshold >= 0.3: True Positive = 2454, False Positive = 934, Precision = 0.724, Recall = 0.903, F-Score = 0.804
+Threshold >= 0.4: True Positive = 2280, False Positive = 465, Precision = 0.831, Recall = 0.839, F-Score = 0.835
+Threshold >= 0.5: True Positive = 2067, False Positive = 210, Precision = 0.908, Recall = 0.760, F-Score = 0.828
+Threshold >= 0.6: True Positive = 1795, False Positive = 89, Precision = 0.953, Recall = 0.660, F-Score = 0.780
+Threshold >= 0.7: True Positive = 1458, False Positive = 36, Precision = 0.976, Recall = 0.536, F-Score = 0.692
+Threshold >= 0.8: True Positive = 999, False Positive = 7, Precision = 0.993, Recall = 0.368, F-Score = 0.537
+Threshold >= 0.9: True Positive = 525, False Positive = 0, Precision = 1.000, Recall = 0.193, F-Score = 0.324
 ```
-true p(>=0.1)==label 23515
-false 978
-false positive 978
-
-true p(>=0.2)==label 24112
-false 381
-false positive 379
-
-true p(>=0.3)==label 24255
-false 238
-false positive 217
-
-true p(>=0.4)==label 24276
-false 217
-false positive 118
-
-true p(>=0.5)==label 24238
-false 255
-false positive 66
-
-true p(>=0.6)==label 24184
-false 309
-false positive 38
-
-true p(>=0.7)==label 24079
-false 414
-false positive 12
-
-true p(>=0.8)==label 23851
-false 642
-false positive 1
-
-true p(>=0.9)==label 23317
-false 1176
-false positive 0
-
-
+```
+(Naive Bayes prediction added to the feature vector)
+```
+```
+Threshold >= 0.1: True Positive = 2583, False Positive = 1887, Precision = 0.578, Recall = 0.981, F-Score = 0.727
+Threshold >= 0.2: True Positive = 2526, False Positive = 705, Precision = 0.782, Recall = 0.960, F-Score = 0.862
+Threshold >= 0.3: True Positive = 2441, False Positive = 267, Precision = 0.901, Recall = 0.927, F-Score = 0.914
+Threshold >= 0.4: True Positive = 2346, False Positive = 118, Precision = 0.952, Recall = 0.891, F-Score = 0.921
+Threshold >= 0.5: True Positive = 2272, False Positive = 73, Precision = 0.969, Recall = 0.863, F-Score = 0.913
+Threshold >= 0.6: True Positive = 2160, False Positive = 53, Precision = 0.976, Recall = 0.821, F-Score = 0.892
+Threshold >= 0.7: True Positive = 1951, False Positive = 34, Precision = 0.983, Recall = 0.741, F-Score = 0.845
+Threshold >= 0.8: True Positive = 1685, False Positive = 15, Precision = 0.991, Recall = 0.640, F-Score = 0.778
+Threshold >= 0.9: True Positive = 1328, False Positive = 2, Precision = 0.998, Recall = 0.505, F-Score = 0.670
 
 ```
-- p(>=0.4) has the best performance (99,11%).
+Increased risk of overfitting, it's important to perform an evaluation with a train/test dataset split, to check if the performance increases for unseen data.
 
-```Note: This makes sense because the training data contains more ham than spam entries.```
-- p(>=0.5) has the second best performance (98,95%), with a lot less **false positives** (ham incorrectly classified as spam).
-- p(>=0.7) has the fewest **false positives** and a performance of 98,30%.
+- [x] here adding the Naive Bayes predictions increases the performance for unseen data.
 
-```If you are okay with few emails incorrectly not classified as fraud and do not want any ham email classified as fraud, select the later.```
+```
+Test results on train/test dataset being equal
+```
+``` 
+Threshold >= 0.1: True Positive = 9010, False Positive = 7030, Precision = 0.562, Recall = 1.000, F-Score = 0.719
+Threshold >= 0.2: True Positive = 9006, False Positive = 2527, Precision = 0.781, Recall = 0.999, F-Score = 0.877
+Threshold >= 0.3: True Positive = 8986, False Positive = 784, Precision = 0.920, Recall = 0.997, F-Score = 0.957
+Threshold >= 0.4: True Positive = 8907, False Positive = 182, Precision = 0.980, Recall = 0.988, F-Score = 0.984
+Threshold >= 0.5: True Positive = 8718, False Positive = 29, Precision = 0.997, Recall = 0.967, F-Score = 0.982
+Threshold >= 0.6: True Positive = 8184, False Positive = 2, Precision = 1.000, Recall = 0.908, F-Score = 0.952
+Threshold >= 0.7: True Positive = 7197, False Positive = 1, Precision = 1.000, Recall = 0.799, F-Score = 0.888
+Threshold >= 0.8: True Positive = 5671, False Positive = 0, Precision = 1.000, Recall = 0.629, F-Score = 0.772
+Threshold >= 0.9: True Positive = 3324, False Positive = 0, Precision = 1.000, Recall = 0.369, F-Score = 0.539
+```
+```
+(Naive Bayes prediction added to the feature vector)
+```
+```
+Threshold >= 0.1: True Positive = 9010, False Positive = 3092, Precision = 0.745, Recall = 1.000, F-Score = 0.853
+Threshold >= 0.2: True Positive = 9007, False Positive = 1011, Precision = 0.899, Recall = 0.999, F-Score = 0.947
+Threshold >= 0.3: True Positive = 8948, False Positive = 358, Precision = 0.962, Recall = 0.993, F-Score = 0.977
+Threshold >= 0.4: True Positive = 8848, False Positive = 169, Precision = 0.981, Recall = 0.982, F-Score = 0.982
+Threshold >= 0.5: True Positive = 8707, False Positive = 81, Precision = 0.991, Recall = 0.966, F-Score = 0.978
+Threshold >= 0.6: True Positive = 8525, False Positive = 27, Precision = 0.997, Recall = 0.946, F-Score = 0.971
+Threshold >= 0.7: True Positive = 8251, False Positive = 3, Precision = 1.000, Recall = 0.916, F-Score = 0.956
+Threshold >= 0.8: True Positive = 7770, False Positive = 0, Precision = 1.000, Recall = 0.862, F-Score = 0.926
+Threshold >= 0.9: True Positive = 6686, False Positive = 0, Precision = 1.000, Recall = 0.742, F-Score = 0.852
+```
+ 
+- p(>=0.4) has the best performance (~98%).
+
+```Note: This makes sense because the training data contains more ham than spam entries.``` 
+
+```If you are okay with few emails incorrectly not classified as fraud and do not want any ham email classified as fraud, select a higher threshold.```
+ 
+
 # 
 - **rust-bert-fraud-detection** can be further improved by finding a better set of [topics/fraud indicators](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/mod.rs) to be extracted and used for the classification. 
 - Using a better model for the topic extraction and sentiment prediction should also improve the fraud detection.
