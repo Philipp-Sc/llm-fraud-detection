@@ -68,8 +68,8 @@ pub fn read_datasets_and_shuffle(paths: &[&str], shuffled_idx: &Vec<usize>) -> a
 
     let mut dataset_shuffled = Vec::with_capacity(dataset.len());
 
-    for &i in shuffled_idx {
-        dataset_shuffled.push(dataset[i].clone());
+    for i in shuffled_idx {
+        dataset_shuffled.push(dataset[*i].clone());
     }
 
     Ok(dataset_shuffled)

@@ -95,7 +95,7 @@ pub fn create_training_data(dataset_paths: Vec<&str>,topics_output_path: &str) -
     let dataset_view: Vec<(&str,&f64)> = dataset.iter().map(|(text,label)| (text.as_str(),label)).collect();
 
 
-    //sentiment::extract_sentiments(&dataset_view,Some(format!("sentiment_extract_sentiments_{}",topics_output_path)))?;
+    sentiment::extract_sentiments(&dataset_view,Some(format!("sentiment_extract_sentiments_{}",topics_output_path)))?;
     //language_model::extract_topics(&dataset_view,&FRAUD_INDICATORS,Some(format!("language_model_extract_topics_{}",topics_output_path)))?;
     language_model::extract_topic_pairs(&dataset_view,&FRAUD_INDICATOR_PAIRS,Some(format!("language_model_extract_topics_{}",topics_output_path)))?;
 

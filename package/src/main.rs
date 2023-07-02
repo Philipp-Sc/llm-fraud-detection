@@ -95,7 +95,17 @@ fn naive_bayes_train_and_train_and_test_final_regression_model() -> anyhow::Resu
     let paths = data_paths.iter().map(|x| x.as_str()).collect::<Vec<&str>>();
 
     let shuffled_idx = generate_shuffled_idx(&paths[..])?;
-    let dataset = rust_bert_fraud_detection_tools::build::data::read_datasets_and_shuffle(&paths[..],&shuffled_idx)?;
+   
+    let data_paths1 = vec![
+        "youtubeSpamCollection",
+        "enronSpamSubset",
+        "lingSpam",
+        "smsspamcollection",
+        "completeSpamAssassin",
+        "governance_proposal_spam_likelihood"].into_iter().map(|x| format!("./dataset/{}.csv",x)).collect::<Vec<String>>();
+    let paths1 = data_paths1.iter().map(|x| x.as_str()).collect::<Vec<&str>>();
+
+    let dataset = rust_bert_fraud_detection_tools::build::data::read_datasets_and_shuffle(&paths1[..],&shuffled_idx)?;
 
     let (train_dataset, test_dataset) = split_vector(&dataset,0.7);
     let train_dataset = train_dataset.to_vec();
@@ -180,13 +190,26 @@ fn naive_bayes_train() -> anyhow::Result<()>{
     let paths = data_paths.iter().map(|x| x.as_str()).collect::<Vec<&str>>();
 
     let shuffled_idx = generate_shuffled_idx(&paths[..])?;
+
+    let data_paths = vec![
+        "youtubeSpamCollection",
+        "enronSpamSubset",
+        "lingSpam",
+        "smsspamcollection",
+        "completeSpamAssassin",
+        "governance_proposal_spam_likelihood"].into_iter().map(|x| format!("./dataset/{}.csv",x)).collect::<Vec<String>>();
+    let paths = data_paths.iter().map(|x| x.as_str()).collect::<Vec<&str>>();
+
+
     let dataset = rust_bert_fraud_detection_tools::build::data::read_datasets_and_shuffle(&paths[..],&shuffled_idx)?;
 
-    let (train_dataset, test_dataset) = split_vector(&dataset,0.7);
+/*  let (train_dataset, test_dataset) = split_vector(&dataset,0.7);
     let train_dataset = train_dataset.to_vec();
     let test_dataset = test_dataset.to_vec();
 
     create_naive_bayes_model(&train_dataset,&test_dataset)
+*/
+    create_naive_bayes_model(&dataset,&dataset)
 }
 
 fn generate_feature_vectors() -> anyhow::Result<()> {
