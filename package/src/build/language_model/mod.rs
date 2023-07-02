@@ -12,8 +12,33 @@ lazy_static::lazy_static! {
         static ref SEQUENCE_CLASSIFICATION_MODEL: Arc<Mutex<ZeroShotClassificationModel>> = Arc::new(Mutex::new(ZeroShotClassificationModel::new(Default::default()).unwrap()));
     }
 
-pub fn get_topic_predictions(input: &[&str], topics: &[&str])  -> anyhow::Result<Vec<Vec<f64>>> {
+pub fn get_topic_predictions(batch: &[&str], topic_pairs: &[[&str;2]])  -> anyhow::Result<Vec<Vec<f64>>> {
 
+        let sequence_classification_model = SEQUENCE_CLASSIFICATION_MODEL.try_lock().unwrap();
+
+        let mut output: Vec<Vec<Label>> = Vec::new();
+        for _ in 0..batch.len() {
+            output.push(Vec::new());
+        }
+
+
+        for topics in topic_pairs {
+
+            let mut output_for_pair: Vec<Vec<Label>>= sequence_classification_model.predict_multilabel(
+                &batch,
+                &topics,
+                None, /*Some(Box::new(|label: &str| {
+                    format!("This example is about {}.", label)
+                }))*/
+                128,
+            )?;
+            for i in 0..output.len(){
+                output[i].append(&mut output_for_pair[i]);
+            }
+
+        }
+
+    /*
     let output: Vec<Vec<Label>>= SEQUENCE_CLASSIFICATION_MODEL.try_lock().unwrap().predict_multilabel(
         input,
         topics,
@@ -21,7 +46,7 @@ pub fn get_topic_predictions(input: &[&str], topics: &[&str])  -> anyhow::Result
             format!("This example is about {}.", label)
         })),
         128,
-    )?;
+    )?;*/
     Ok(output.iter().map(|x| x.iter().map(|y| y.score).collect::<Vec<f64>>()).collect())
 }
 
@@ -75,7 +100,7 @@ pub fn extract_topic_pairs(dataset: &Vec<(&str,&f64)>, topic_pairs: &[[&str;2]],
 
     let mut list_outputs: Vec<Vec<Vec<Label>>> = Vec::new();
 
-    let chunks = 256;
+    let chunks = 512;
 
     let total_batches = dataset.len() / chunks;
     let mut completed_batches = 0;

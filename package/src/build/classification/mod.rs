@@ -49,7 +49,8 @@ pub fn test_regression_model(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>) ->
     let x = DenseMatrix::from_2d_array(&x_dataset.iter().map(|x| &x[..]).collect::<Vec<&[f64]>>()[..]);
     let y = y_dataset;
 
-    let model = MODEL.try_lock().unwrap();
+//    let model = MODEL.try_lock().unwrap();
+    let model = get_model()?;
     let y_hat = model.predict(&x).unwrap();
 
 
