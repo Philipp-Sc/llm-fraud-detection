@@ -97,7 +97,7 @@ pub fn load_sentiments_from_file(paths: &[&str]) -> anyhow::Result<(Vec<f64>,Vec
     }
     // Initialize two empty vectors to store the predicted values and labels.
     let mut predictions: Vec<f64> = Vec::new();
-    let mut labels: Vec<(String,bool)> = Vec::new();
+    let mut labels: Vec<(String,f64)> = Vec::new();
 
     for sentiment_classifier_prediction in list_sentiment_classifier_prediction {
 
@@ -106,7 +106,7 @@ pub fn load_sentiments_from_file(paths: &[&str]) -> anyhow::Result<(Vec<f64>,Vec
     }
     for each in sentiment_classifier_prediction["dataset"].as_array().unwrap() {
         let entry = each.as_array().unwrap();
-        labels.push((entry[0].as_str().unwrap().to_string(),entry[1].as_bool().unwrap()));
+        labels.push((entry[0].as_str().unwrap().to_string(),entry[1].as_f64().unwrap()));
     }
 
     }
@@ -114,7 +114,7 @@ pub fn load_sentiments_from_file(paths: &[&str]) -> anyhow::Result<(Vec<f64>,Vec
     println!("len of labels: {}",labels.len());
     assert_eq!(predictions.len(),labels.len());
 
-    let mut dataset: Vec<(&f64,&(String,bool))> = Vec::new();
+    let mut dataset: Vec<(&f64,&(String,f64))> = Vec::new();
     for i in 0..predictions.len() {
         if labels[i].0 != "empty" {
             dataset.push((&predictions[i],&labels[i]));
@@ -127,7 +127,7 @@ pub fn load_sentiments_from_file(paths: &[&str]) -> anyhow::Result<(Vec<f64>,Vec
     let mut y_dataset: Vec<f64> = Vec::new();
     for each in &dataset {
             x_dataset.push(*each.0);
-            y_dataset.push(if each.1.1 { 1.0 } else { 0.0 });
+            y_dataset.push(each.1.1);
     }
 
     assert_eq!(x_dataset.len(),y_dataset.len());
