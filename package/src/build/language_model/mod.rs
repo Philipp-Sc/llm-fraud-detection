@@ -75,7 +75,7 @@ pub fn extract_topic_pairs(dataset: &Vec<(&str,&f64)>, topic_pairs: &[[&str;2]],
 
     let mut list_outputs: Vec<Vec<Vec<Label>>> = Vec::new();
 
-    let chunks = 1;
+    let chunks = 256;
 
     let total_batches = dataset.len() / chunks;
     let mut completed_batches = 0;
@@ -86,6 +86,9 @@ pub fn extract_topic_pairs(dataset: &Vec<(&str,&f64)>, topic_pairs: &[[&str;2]],
         println!("\nProcessing batch {}/{}", completed_batches + 1, total_batches);
 
         let mut output: Vec<Vec<Label>> = Vec::new();
+	for _ in 0..batch.len() {
+	    output.push(Vec::new());
+	}
 
         for topics in topic_pairs {
 
@@ -101,6 +104,7 @@ pub fn extract_topic_pairs(dataset: &Vec<(&str,&f64)>, topic_pairs: &[[&str;2]],
             for i in 0..output.len(){
                 output[i].append(&mut output_for_pair[i]);
             }
+
         }
 
         list_outputs.push(output);

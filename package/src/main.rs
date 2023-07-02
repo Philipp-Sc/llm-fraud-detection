@@ -91,7 +91,7 @@ fn train_and_test_final_regression_model() -> anyhow::Result<()> {
         "lingSpam",
         "smsspamcollection",
         "completeSpamAssassin",
-        "governance_proposal_spam_ham"].into_iter().map(|x| format!("data_gen_v4_({}).json",x)).collect::<Vec<String>>();
+        "governance_proposal_spam_likelihood"].into_iter().map(|x| format!("data_gen_v4_({}).json",x)).collect::<Vec<String>>();
     let paths = data_paths.iter().map(|x| x.as_str()).collect::<Vec<&str>>();
 
     let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&paths[..])?;

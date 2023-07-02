@@ -10,7 +10,7 @@ lazy_static::lazy_static! {
 pub fn extract_sentiments(dataset: &Vec<(&str,&f64)>, path: Option<String>) -> anyhow::Result<Vec<f64>> {
 
     let mut list_sentiments: Vec<Vec<f64>> = Vec::new();
-    let chunks = 200;
+    let chunks = 256;
 
     let total_batches = dataset.len() / chunks;
     let mut completed_batches = 0;
