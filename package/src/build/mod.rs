@@ -115,17 +115,13 @@ pub fn test_classification_model(x_dataset_shuffled: &Vec<Vec<f64>>, y_dataset_s
     Ok(())
 }
 
-pub fn create_naive_bayes_model(paths: &[&str], test_paths: &[&str]) -> anyhow::Result<()> {
+pub fn create_naive_bayes_model(train_dataset: &Vec<(String,f64)>, test_dataset: &Vec<(String,f64)>) -> anyhow::Result<()> {
 
-    let dataset: Vec<(String,f64)> = read_datasets(paths)?;
+    let x_dataset = train_dataset.iter().map(|x| x.0.to_string()).collect::<Vec<String>>();
+    let y_dataset = train_dataset.iter().map(|x| if x.1 < 0.5 { 0 } else { 1 }).collect::<Vec<i32>>();
 
-    let x_dataset= dataset.iter().map(|x| x.0.to_string()).collect::<Vec<String>>();
-    let y_dataset= dataset.into_iter().map(|x| if x.1 < 0.5 {0} else {1}).collect::<Vec<i32>>();
-
-    let dataset: Vec<(String,f64)> = read_datasets(test_paths)?;
-
-    let test_x_dataset= dataset.iter().map(|x| x.0.to_string()).collect::<Vec<String>>();
-    let test_y_dataset= dataset.into_iter().map(|x| if x.1 < 0.5 {0} else {1}).collect::<Vec<i32>>();
+    let test_x_dataset = test_dataset.iter().map(|x| x.0.to_string()).collect::<Vec<String>>();
+    let test_y_dataset = test_dataset.iter().map(|x| if x.1 < 0.5 { 0 } else { 1 }).collect::<Vec<i32>>();
 
     naive_bayes::update_naive_bayes_model(&x_dataset,&y_dataset,&test_x_dataset,&test_y_dataset)?;
     naive_bayes::update_categorical_naive_bayes_model(&x_dataset,&y_dataset,&test_x_dataset,&test_y_dataset)?;

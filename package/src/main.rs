@@ -5,7 +5,7 @@ use rust_bert_fraud_detection_tools::service::spawn_rust_bert_fraud_detection_so
 use std::env;
 use rust_bert_fraud_detection_socket_ipc::ipc::client_send_rust_bert_fraud_detection_request;
 use rust_bert_fraud_detection_tools::build::create_naive_bayes_model;
-use rust_bert_fraud_detection_tools::build::data::split_vector;
+use rust_bert_fraud_detection_tools::build::data::{generate_shuffled_idx, split_vector};
 
 pub const SENTENCES: [&str;6] = [
     "Lose up to 19% weight. Special promotion on our new weightloss.",
@@ -39,6 +39,7 @@ fn main() -> anyhow::Result<()> {
     let command = &args[1];
 
     match command.as_str() {
+        "naive_bayes_train_and_train_and_test_final_regression_model" => {naive_bayes_train_and_train_and_test_final_regression_model();},
         "naive_bayes_train" => {naive_bayes_train();},
         "naive_bayes_predict" => {naive_bayes_predict();},
         "train_and_test_final_regression_model" => {train_and_test_final_regression_model();},
@@ -83,6 +84,46 @@ fn service() -> anyhow::Result<()> {
     }
 }
 
+fn naive_bayes_train_and_train_and_test_final_regression_model() -> anyhow::Result<()> {
+    let data_paths = vec![
+        "youtubeSpamCollection",
+        "enronSpamSubset",
+        "lingSpam",
+        "smsspamcollection",
+        "completeSpamAssassin",
+        "governance_proposal_spam_likelihood"].into_iter().map(|x| format!("data_gen_v4_({}).json",x)).collect::<Vec<String>>();
+    let paths = data_paths.iter().map(|x| x.as_str()).collect::<Vec<&str>>();
+
+    let shuffled_idx = generate_shuffled_idx(&paths[..])?;
+    let dataset = rust_bert_fraud_detection_tools::build::data::read_datasets_and_shuffle(&paths[..],&shuffled_idx)?;
+
+    let (train_dataset, test_dataset) = split_vector(&dataset,0.7);
+    let train_dataset = train_dataset.to_vec();
+    let test_dataset = test_dataset.to_vec();
+
+    create_naive_bayes_model(&train_dataset,&test_dataset)?;
+
+    let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&paths[..],&shuffled_idx)?;
+
+    let (x_train, x_test) = split_vector(&x_dataset,0.7);
+    let x_train = x_train.to_vec();
+    let x_test = x_test.to_vec();
+    let (y_train, y_test) = split_vector(&y_dataset,0.7);
+    let y_train = y_train.to_vec();
+    let y_test = y_test.to_vec();
+
+    rust_bert_fraud_detection_tools::build::create_classification_model(&x_train,&y_train)?;
+    rust_bert_fraud_detection_tools::build::test_classification_model(&x_test,&y_test)?;
+
+    let fraud_probabilities = rust_bert_fraud_detection_tools::fraud_probabilities(&SENTENCES)?;
+    println!("Predictions:\n{:?}",fraud_probabilities);
+    println!("Labels:\n[1.0, 0.0, 1.0, 0.0, 1.0, 0.0]");
+    Ok(())
+
+}
+
+
+
 fn train_and_test_final_regression_model() -> anyhow::Result<()> {
 
     let data_paths = vec![
@@ -94,7 +135,9 @@ fn train_and_test_final_regression_model() -> anyhow::Result<()> {
         "governance_proposal_spam_likelihood"].into_iter().map(|x| format!("data_gen_v4_({}).json",x)).collect::<Vec<String>>();
     let paths = data_paths.iter().map(|x| x.as_str()).collect::<Vec<&str>>();
 
-    let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&paths[..])?;
+    let shuffled_idx = generate_shuffled_idx(&paths[..])?;
+
+    let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&paths[..],&shuffled_idx)?;
 
     rust_bert_fraud_detection_tools::build::create_classification_model(&x_dataset,&y_dataset)?;
     rust_bert_fraud_detection_tools::build::test_classification_model(&x_dataset,&y_dataset)?;
@@ -126,21 +169,24 @@ fn naive_bayes_predict() -> anyhow::Result<()>{
 
 
 fn naive_bayes_train() -> anyhow::Result<()>{
-    let paths= vec![
-        "./dataset/enronSpamSubset.csv",
-        "./dataset/lingSpam.csv",
-        "./dataset/youtubeSpamCollection.csv",
-        "./dataset/smsspamcollection.csv",
-        "./dataset/completeSpamAssassin.csv",
-        "./dataset/governance_proposal_spam_ham.csv"];
-    let test_paths= vec![
-        "./dataset/enronSpamSubset.csv",
-        "./dataset/lingSpam.csv",
-        "./dataset/youtubeSpamCollection.csv",
-        "./dataset/smsspamcollection.csv",
-        "./dataset/completeSpamAssassin.csv",
-        "./dataset/governance_proposal_spam_ham.csv"];
-    create_naive_bayes_model(&paths,&test_paths)
+
+    let data_paths = vec![
+        "youtubeSpamCollection",
+        "enronSpamSubset",
+        "lingSpam",
+        "smsspamcollection",
+        "completeSpamAssassin",
+        "governance_proposal_spam_likelihood"].into_iter().map(|x| format!("data_gen_v4_({}).json",x)).collect::<Vec<String>>();
+    let paths = data_paths.iter().map(|x| x.as_str()).collect::<Vec<&str>>();
+
+    let shuffled_idx = generate_shuffled_idx(&paths[..])?;
+    let dataset = rust_bert_fraud_detection_tools::build::data::read_datasets_and_shuffle(&paths[..],&shuffled_idx)?;
+
+    let (train_dataset, test_dataset) = split_vector(&dataset,0.7);
+    let train_dataset = train_dataset.to_vec();
+    let test_dataset = test_dataset.to_vec();
+
+    create_naive_bayes_model(&train_dataset,&test_dataset)
 }
 
 fn generate_feature_vectors() -> anyhow::Result<()> {

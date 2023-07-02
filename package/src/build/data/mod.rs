@@ -49,7 +49,35 @@ pub fn read_datasets(dataset_paths: &[&str]) -> anyhow::Result<Vec<(String,f64)>
 
 
 
-pub fn create_dataset(paths: &[&str]) -> anyhow::Result<(Vec<Vec<f64>>,Vec<f64>)> {
+
+pub fn generate_shuffled_idx(paths: &[&str]) -> anyhow::Result<Vec<usize>> {
+    // let (x_dataset, _): (Vec<Vec<f64>>, Vec<f64>) = language_model::load_topics_from_file(paths)?;
+    let (x_dataset, _) = sentiment::load_sentiments_from_file(paths)?;
+
+    // create an index array
+    let mut idx: Vec<usize> = (0..x_dataset.len()).collect();
+
+    // shuffle the index array using the thread_rng() random number generator
+    idx.shuffle(&mut thread_rng());
+
+    Ok(idx)
+}
+
+pub fn read_datasets_and_shuffle(paths: &[&str], shuffled_idx: &Vec<usize>) -> anyhow::Result<Vec<(String,f64)>> {
+    let dataset: Vec<(String, f64)> = read_datasets(paths)?;
+
+    let mut dataset_shuffled = Vec::with_capacity(dataset.len());
+
+    for &i in shuffled_idx {
+        dataset_shuffled.push(dataset[i].clone());
+    }
+
+    Ok(dataset_shuffled)
+}
+
+
+pub fn create_dataset(paths: &[&str], shuffled_idx: &Vec<usize>) -> anyhow::Result<(Vec<Vec<f64>>,Vec<f64>)> {
+
 
     let (mut x_dataset, y_dataset): (Vec<Vec<f64>>, Vec<f64>) = language_model::load_topics_from_file(paths)?;
     let (x_dataset_sentiment, _) = sentiment::load_sentiments_from_file(paths)?;
@@ -58,18 +86,19 @@ pub fn create_dataset(paths: &[&str]) -> anyhow::Result<(Vec<Vec<f64>>,Vec<f64>)
     for i in 0..x_dataset.len() {
         x_dataset[i].push(x_dataset_sentiment[i]);
     }
+    assert_eq!(shuffled_idx.len(),x_dataset.len());
 
     // create an index array
-    let mut idx: Vec<usize> = (0..x_dataset.len()).collect();
+    //let mut idx: Vec<usize> = (0..x_dataset.len()).collect();
 
     // shuffle the index array using the thread_rng() random number generator
-    idx.shuffle(&mut thread_rng());
+    // idx.shuffle(&mut thread_rng());
 
     // use the shuffled index array to reorder both datasets at once
     let mut x_dataset_shuffled = Vec::with_capacity(x_dataset.len());
     let mut y_dataset_shuffled = Vec::with_capacity(y_dataset.len());
 
-    for i in idx {
+    for &i in shuffled_idx {
         x_dataset_shuffled.push(x_dataset[i].clone());
         y_dataset_shuffled.push(y_dataset[i].clone());
     }
