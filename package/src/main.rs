@@ -96,6 +96,10 @@ fn train_and_test_final_regression_model() -> anyhow::Result<()> {
 
     let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&paths[..])?;
 
+    rust_bert_fraud_detection_tools::build::create_classification_model(&x_dataset,&y_dataset)?;
+    rust_bert_fraud_detection_tools::build::test_classification_model(&x_dataset,&y_dataset)?;
+
+/*
     let (x_train, x_test) = split_vector(&x_dataset,0.7);
     let x_train = x_train.to_vec();
     let x_test = x_test.to_vec();
@@ -105,7 +109,7 @@ fn train_and_test_final_regression_model() -> anyhow::Result<()> {
 
     rust_bert_fraud_detection_tools::build::create_classification_model(&x_train,&y_train)?;
     rust_bert_fraud_detection_tools::build::test_classification_model(&x_test,&y_test)?;
-
+*/
     let fraud_probabilities = rust_bert_fraud_detection_tools::fraud_probabilities(&SENTENCES)?;
     println!("Predictions:\n{:?}",fraud_probabilities);
     println!("Labels:\n[1.0, 0.0, 1.0, 0.0, 1.0, 0.0]");
