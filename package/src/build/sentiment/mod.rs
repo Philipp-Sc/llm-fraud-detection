@@ -7,26 +7,29 @@ lazy_static::lazy_static! {
         static ref SENTIMENT_CLASSIFIER: Arc<Mutex<SentimentModel>> = Arc::new(Mutex::new(SentimentModel::new(Default::default()).unwrap()));
     }
 
-pub fn extract_sentiments(dataset: &Vec<(String,bool)>, path: Option<String>) -> anyhow::Result<Vec<f64>> {
+pub fn extract_sentiments(dataset: &Vec<(&str,&f64)>, path: Option<String>) -> anyhow::Result<Vec<f64>> {
 
     let mut list_sentiments: Vec<Vec<f64>> = Vec::new();
     let chunks = 200;
-    let mut count: usize = 0;
-    for batch in dataset.chunks(chunks) {
 
-        let data = &batch.iter().map(|x| x.0.as_str().as_ref()).collect::<Vec<&str>>();
-        let sentiments = get_sentiments(data);
-        count += sentiments.len();
-        println!("sentiments generated: {}",count);
+    let total_batches = dataset.len() / chunks;
+    let mut completed_batches = 0;
 
+    for batch in dataset.iter().map(|x| x.0).collect::<Vec<&str>>().chunks(chunks) {
+        println!("\nProcessing batch {}/{}", completed_batches + 1, total_batches);
+        let sentiments = get_sentiments(&batch);
         list_sentiments.push(sentiments);
-
-        if let Some(ref path) = path {
-            let json_string = serde_json::json!({"sentiments":&(list_sentiments.iter().flatten().collect::<Vec<&f64>>()),"dataset":&dataset}).to_string();
-            fs::write(&path, &json_string).ok();
-        }
+        completed_batches += 1;
 
     }
+
+    println!("Total batches processed: {}", total_batches);
+
+    if let Some(ref path) = path {
+        let json_string = serde_json::json!({"sentiments":&(list_sentiments.iter().flatten().collect::<Vec<&f64>>()),"dataset":&dataset}).to_string();
+        fs::write(&path, &json_string).ok();
+    }
+
 
     Ok(list_sentiments.into_iter().flatten().collect::<Vec<f64>>())
 }

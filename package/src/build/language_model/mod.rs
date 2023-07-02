@@ -26,7 +26,7 @@ pub fn get_topic_predictions(input: &[&str], topics: &[&str])  -> anyhow::Result
 }
 
 
-pub fn extract_topics(dataset: &Vec<(&str,&bool)>, topics: &[&str], path: Option<String>) -> anyhow::Result<Vec<Vec<Label>>> {
+pub fn extract_topics(dataset: &Vec<(&str,&f64)>, topics: &[&str], path: Option<String>) -> anyhow::Result<Vec<Vec<Label>>> {
 
     let sequence_classification_model = SEQUENCE_CLASSIFICATION_MODEL.try_lock().unwrap();
 
@@ -69,13 +69,13 @@ pub fn extract_topics(dataset: &Vec<(&str,&bool)>, topics: &[&str], path: Option
     Ok(outputs)
 }
 
-pub fn extract_topic_pairs(dataset: &Vec<(&str,&bool)>, topic_pairs: &[[&str;2];9], path: Option<String>) -> anyhow::Result<Vec<Vec<Label>>> {
+pub fn extract_topic_pairs(dataset: &Vec<(&str,&f64)>, topic_pairs: &[[&str;2]], path: Option<String>) -> anyhow::Result<Vec<Vec<Label>>> {
 
     let sequence_classification_model = SEQUENCE_CLASSIFICATION_MODEL.try_lock().unwrap();
 
     let mut list_outputs: Vec<Vec<Vec<Label>>> = Vec::new();
 
-    let chunks = 256;
+    let chunks = 1;
 
     let total_batches = dataset.len() / chunks;
     let mut completed_batches = 0;
@@ -170,7 +170,7 @@ pub fn load_topics_from_file(paths: &[&str]) -> anyhow::Result<(Vec<Vec<f64>>, V
 
     // Initialize two empty vectors to store the predicted values and labels.
     let mut predictions: Vec<Vec<f64>> = Vec::new();
-    let mut labels: Vec<(String, bool)> = Vec::new();
+    let mut labels: Vec<(String, f64)> = Vec::new();
 
     // Iterate through each element of the list_sequence_classification_multi_label_prediction vector.
     for sequence_classification_multi_label_prediction in list_sequence_classification_multi_label_prediction {
@@ -181,7 +181,7 @@ pub fn load_topics_from_file(paths: &[&str]) -> anyhow::Result<(Vec<Vec<f64>>, V
         // Extract the labels and append them to the labels vector as tuples.
         for each in sequence_classification_multi_label_prediction["dataset"].as_array().unwrap() {
             let entry = each.as_array().unwrap();
-            labels.push((entry[0].as_str().unwrap().to_string(), entry[1].as_bool().unwrap()));
+            labels.push((entry[0].as_str().unwrap().to_string(), entry[1].as_f64().unwrap()));
         }
     }
 
@@ -192,7 +192,7 @@ pub fn load_topics_from_file(paths: &[&str]) -> anyhow::Result<(Vec<Vec<f64>>, V
 
     // Create a dataset by combining the predicted values and labels and filtering out
     // any labels with a string value of "empty".
-    let mut dataset: Vec<(&Vec<f64>, &(String, bool))> = Vec::new();
+    let mut dataset: Vec<(&Vec<f64>, &(String, f64))> = Vec::new();
     for i in 0..predictions.len() {
         if labels[i].0 != "empty" {
             dataset.push((&predictions[i], &labels[i]));
@@ -214,7 +214,7 @@ pub fn load_topics_from_file(paths: &[&str]) -> anyhow::Result<(Vec<Vec<f64>>, V
 
         // Add the new features to the x_dataset vector and add the corresponding label to the y_dataset vector.
         x_dataset.push(new_list);
-        y_dataset.push(if each.1.1 { 1.0 } else { 0.0 });
+        y_dataset.push(each.1.1);
     }
 
     // Check that the x_dataset and y_dataset vectors have the same length.

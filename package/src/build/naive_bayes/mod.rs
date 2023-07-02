@@ -85,13 +85,13 @@ pub fn categorical_nb_model_predict(x_dataset: Vec<String>) ->  anyhow::Result<V
 }
 
 
-pub fn update_naive_bayes_model(x_dataset: Vec<String>, y_dataset: Vec<i32>,test_x_dataset: Vec<String>, test_y_dataset: Vec<i32>) ->  anyhow::Result<()> {
+pub fn update_naive_bayes_model(x_dataset: &Vec<String>, y_dataset: &Vec<i32>,test_x_dataset: &Vec<String>, test_y_dataset: &Vec<i32>) ->  anyhow::Result<()> {
 
-    let texts: ArrayBase<OwnedRepr<String>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((x_dataset.len(),), x_dataset.into_iter().map(|x| remove_non_letters(&x)).collect()).unwrap();
-    let labels: ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((y_dataset.len(),), y_dataset.into_iter().map(|x| x as usize).collect()).unwrap();
+    let texts: ArrayBase<OwnedRepr<String>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((x_dataset.len(),), x_dataset.iter().map(|x| remove_non_letters(&x)).collect()).unwrap();
+    let labels: ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((y_dataset.len(),), y_dataset.iter().map(|&x| x as usize).collect()).unwrap();
 
-    let test_texts: ArrayBase<OwnedRepr<String>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((test_x_dataset.len(),), test_x_dataset).unwrap();
-    let test_labels: ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((test_y_dataset.len(),), test_y_dataset.into_iter().map(|x| x as usize).collect()).unwrap();
+    let test_texts: ArrayBase<OwnedRepr<String>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((test_x_dataset.len(),), test_x_dataset.clone()).unwrap();
+    let test_labels: ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((test_y_dataset.len(),), test_y_dataset.iter().map(|&x| x as usize).collect()).unwrap();
 
     // Counting label categories in the training dataset
     let mut training_label_counts: HashMap<usize, usize> = HashMap::new();
@@ -239,13 +239,13 @@ pub fn update_naive_bayes_model(x_dataset: Vec<String>, y_dataset: Vec<i32>,test
 
 
 
-pub fn update_categorical_naive_bayes_model(x_dataset: Vec<String>, y_dataset: Vec<i32>,test_x_dataset: Vec<String>, test_y_dataset: Vec<i32>) ->  anyhow::Result<()> {
+pub fn update_categorical_naive_bayes_model(x_dataset: &Vec<String>, y_dataset: &Vec<i32>,test_x_dataset: &Vec<String>, test_y_dataset: &Vec<i32>) ->  anyhow::Result<()> {
 
-    let texts: ArrayBase<OwnedRepr<String>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((x_dataset.len(),), x_dataset.into_iter().map(|x| remove_non_letters(&x)).collect()).unwrap();
-    let labels: ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((y_dataset.len(),), y_dataset.into_iter().map(|x| x as usize).collect()).unwrap();
+    let texts: ArrayBase<OwnedRepr<String>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((x_dataset.len(),), x_dataset.iter().map(|x| remove_non_letters(&x)).collect()).unwrap();
+    let labels: ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((y_dataset.len(),), y_dataset.iter().map(|&x| x as usize).collect()).unwrap();
 
-    let test_texts: ArrayBase<OwnedRepr<String>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((test_x_dataset.len(),), test_x_dataset).unwrap();
-    let test_labels: ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((test_y_dataset.len(),), test_y_dataset.into_iter().map(|x| x as usize).collect()).unwrap();
+    let test_texts: ArrayBase<OwnedRepr<String>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((test_x_dataset.len(),), test_x_dataset.clone()).unwrap();
+    let test_labels: ArrayBase<OwnedRepr<usize>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((test_y_dataset.len(),), test_y_dataset.iter().map(|&x| x as usize).collect()).unwrap();
 
     // Counting label categories in the training dataset
     let mut training_label_counts: HashMap<usize, usize> = HashMap::new();

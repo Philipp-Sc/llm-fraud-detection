@@ -5,6 +5,7 @@ use rust_bert_fraud_detection_tools::service::spawn_rust_bert_fraud_detection_so
 use std::env;
 use rust_bert_fraud_detection_socket_ipc::ipc::client_send_rust_bert_fraud_detection_request;
 use rust_bert_fraud_detection_tools::build::create_naive_bayes_model;
+use rust_bert_fraud_detection_tools::build::data::split_vector;
 
 pub const SENTENCES: [&str;6] = [
     "Lose up to 19% weight. Special promotion on our new weightloss.",
@@ -39,9 +40,9 @@ fn main() -> anyhow::Result<()> {
 
     match command.as_str() {
         "naive_bayes_train" => {naive_bayes_train();},
-        "naive_bayes_test" => {naive_bayes_test();},
-        "training" => {training();},
-        "generate_sentiments_and_topics" => {generate_sentiments_and_topics();},
+        "naive_bayes_predict" => {naive_bayes_predict();},
+        "train_and_test_final_regression_model" => {train_and_test_final_regression_model();},
+        "generate_feature_vectors" => {generate_feature_vectors();},
         "service" => {service();},
         _ => {panic!()}
     }
@@ -82,27 +83,28 @@ fn service() -> anyhow::Result<()> {
     }
 }
 
-/*_training*/
-fn training() -> anyhow::Result<()> {
+fn train_and_test_final_regression_model() -> anyhow::Result<()> {
 
-    let training_data_paths = [
-      "data_gen_v3_(enronSpamSubset).json",
-      "data_gen_v3_(lingSpam).json",
-      "data_gen_v3_(smsspamcollection).json",
-      "data_gen_v3_(completeSpamAssassin).json",
-      "data_gen_v3_(governance_proposal_spam_ham).json"];
-    
-    rust_bert_fraud_detection_tools::build::create_classification_model(&training_data_paths)?;
+    let data_paths = vec![
+        "youtubeSpamCollection",
+        "enronSpamSubset",
+        "lingSpam",
+        "smsspamcollection",
+        "completeSpamAssassin",
+        "governance_proposal_spam_ham"].into_iter().map(|x| format!("data_gen_v4_({}).json",x)).collect::<Vec<String>>();
+    let paths = data_paths.iter().map(|x| x.as_str()).collect::<Vec<&str>>();
 
-    println!("test with training data");
-    let test_data_paths = [
-      "data_gen_v3_(enronSpamSubset).json",
-      "data_gen_v3_(lingSpam).json",
-      "data_gen_v3_(smsspamcollection).json",
-      "data_gen_v3_(completeSpamAssassin).json",
-      "data_gen_v3_(governance_proposal_spam_ham).json"];
-    
-    rust_bert_fraud_detection_tools::build::test_classification_model(&test_data_paths)?;
+    let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&paths[..])?;
+
+    let (x_train, x_test) = split_vector(&x_dataset,0.7);
+    let x_train = x_train.to_vec();
+    let x_test = x_test.to_vec();
+    let (y_train, y_test) = split_vector(&y_dataset,0.7);
+    let y_train = y_train.to_vec();
+    let y_test = y_test.to_vec();
+
+    rust_bert_fraud_detection_tools::build::create_classification_model(&x_train,&y_train)?;
+    rust_bert_fraud_detection_tools::build::test_classification_model(&x_test,&y_test)?;
 
     let fraud_probabilities = rust_bert_fraud_detection_tools::fraud_probabilities(&SENTENCES)?;
     println!("Predictions:\n{:?}",fraud_probabilities);
@@ -111,7 +113,7 @@ fn training() -> anyhow::Result<()> {
 }
 
 
-fn naive_bayes_test() -> anyhow::Result<()>{
+fn naive_bayes_predict() -> anyhow::Result<()>{
     let predictions = rust_bert_fraud_detection_tools::build::naive_bayes::categorical_nb_model_predict(SENTENCES.iter().map(|&s| s.to_string()).collect::<Vec<String>>())?;
     println!("Predictions:\n{:?}",predictions);
     println!("Labels:\n[1.0, 0.0, 1.0, 0.0, 1.0, 0.0]");
@@ -137,25 +139,29 @@ fn naive_bayes_train() -> anyhow::Result<()>{
     create_naive_bayes_model(&paths,&test_paths)
 }
 
-fn generate_sentiments_and_topics() -> anyhow::Result<()> {
+fn generate_feature_vectors() -> anyhow::Result<()> {
 
-    //let training_data_path = "data_gen_v3_(enronSpamSubset).json";
-    //rust_bert_fraud_detection_tools::build::create_training_data(vec!["./dataset/enronSpamSubset.csv"],training_data_path)?;
-    //let training_data_path = "data_gen_v3_(lingSpam).json";
-    //rust_bert_fraud_detection_tools::build::create_training_data(vec!["./dataset/lingSpam.csv"],training_data_path)?;
-
-    let training_data_path = "new_data_gen_v3_(youtubeSpamCollection).json";
-    rust_bert_fraud_detection_tools::build::create_training_data(vec!["./dataset/youtubeSpamCollection.csv"],training_data_path)?;
-
-/*    let training_data_path = "data_gen_v3_(smsspamcollection).json";
-    rust_bert_fraud_detection_tools::build::create_training_data(vec!["./dataset/smsspamcollection.csv"],training_data_path)?;
-
-    let training_data_path = "data_gen_v3_(completeSpamAssassin).json";
-    rust_bert_fraud_detection_tools::build::create_training_data(vec!["./dataset/completeSpamAssassin.csv"],training_data_path)?;
-*/
+    // test governance spam ham
+    // let training_data_path = "new_data_gen_v4_(governance_proposal_spam_likelihood).json";
+    // rust_bert_fraud_detection_tools::build::create_training_data(vec!["./dataset/governance_proposal_spam_likelihood.csv"],training_data_path)?;
 
 
-    //rust_bert_fraud_detection_tools::build::create_training_data(vec!["./dataset/completeSpamAssassin.csv","./dataset/lingSpam.csv","./dataset/enronSpamSubset.csv"],training_data_path)?;
+    let datasets = [
+        "youtubeSpamCollection",
+        "enronSpamSubset",
+        "lingSpam",
+        "smsspamcollection",
+        "completeSpamAssassin",
+        "governance_proposal_spam_likelihood"];
+
+    for dataset in datasets {
+        let training_data_path = format!("data_gen_v4_({}).json",dataset);
+        let dataset_path = format!("./dataset/{}.csv",dataset);
+
+        rust_bert_fraud_detection_tools::build::create_training_data(vec![&dataset_path],&training_data_path)?;
+    }
+
+
     return Ok(());
 
 }
