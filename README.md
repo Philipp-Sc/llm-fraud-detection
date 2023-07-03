@@ -8,19 +8,41 @@
 # rust-bert-fraud-detection
 Robust semi-supervised fraud detection using Rust native NLP pipelines.
 # About
-**rust-bert-fraud-detection** uses the NLP pipelines from [rust-bert](https://github.com/guillaume-be/rust-bert) to extract topics and sentiment from the given text. A simple [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) is trained to predict fraud/ham. The training data is generated using a diverse collection of commonly used spam/ham datasets (LingSpam, EnronSpam, Spam Assassin Dataset, SMSSpamCollection, YoutubeSpam, ...). Since the [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) is trained on latent features ([topics/fraud indicators](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/mod.rs)) and NOT on a text encoding (such as Bag of Words) much less datapoints are needed to build a general model which should work better accross different domains (e.g emails, websites and governance proposals).
-#
-Nonetheless **rust-bert-fraud-detection** uses an additional measure to improve the performance further:    
+**rust-bert-fraud-detection** uses the NLP pipelines from [rust-bert](https://github.com/guillaume-be/rust-bert) to extract [topics](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/mod.rs) (zero shot classification) and sentiment from the given text. A simple [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) is then trained to predict spam/ham.     
 
-['hard-coded' features](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/feature_engineering/mod.rs), they include word count information, punctuation, number, url, emoji and upper-case counts. This also includes a count of red/green flags, i.e words that are known to have a high likelihood being only present in spam/ham. And additionally the prediction of a [Categorical Naive Bayes classifier](https://docs.rs/smartcore/latest/smartcore/naive_bayes/categorical/struct.CategoricalNB.html) which was trained on a Bag of Words representation of the used spam/ham dataset. Naive Bayes classifier are well known for their effectiveness in text related tasks especially spam detection.   
-In the tests the Categorical variant performed better than the [Gaussian Naive Bayes classifier](https://docs.rs/crate/linfa-bayes/latest) (F1-score of `0.90` vs `0.82`), but both predictions were added to the feature vector.
-This addition of the Naive Bayes predictions improves the accuracy of the final Random Forest Regressor from 97% towards 99%.
+The training data is generated from a diverse collection of commonly used spam/ham datasets:
+- Ling Spam,
+- Enron Spam,
+- Spam Assassin Dataset,
+- SMS Spam Collection,
+- Youtube Spam,
+- Crypto Governance Proposals.
 
-# 
-This project is part of [CosmosRustBot](https://github.com/Philipp-Sc/cosmos-rust-bot), which provides Governance Proposal Notifications for Cosmos Blockchains. The goal is automatically detect fraudulent and deceitful proposals to prevent users falling for crypto scams. The current model is very effective in detecting fake governance proposals.
+Since the [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) is trained on latent features  and NOT on a text encoding (such as Bag of Words) much less datapoints are needed to build a general and robust model which should work better accross different domains (e.g emails, websites and governance proposals).
+
+## 'hard-coded' features
+Additional ['hard-coded' features](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/feature_engineering/mod.rs) to improve the performance further have been evaluated and added:
+
+### Various Counts
+
+- word count information 
+- punctuation, number, url, emoji and upper-case counts
+  
+Together these counts increase the models F-Score <ins>by approx. 4 percentage points</ins>.
+
+### Naive Bayes
+Naive Bayes classifier are well known for their effectiveness in text related tasks especially spam detection.  
+
+Two Naive Bayes classifiers have been trained on a Bag of Words representation of the spam/ham datasets.
+- [Categorical Naive Bayes classifier](https://docs.rs/smartcore/latest/smartcore/naive_bayes/categorical/struct.CategoricalNB.html) 
+- [Gaussian Naive Bayes classifier](https://docs.rs/crate/linfa-bayes/latest)
+  
+Adding the predictions of both of the classifiers to the 'hard-coded' features increases the F-Score <ins>by approx. 8 percentage points</ins>.
 
 #
 Note that the language models used by [rust-bert](https://github.com/guillaume-be/rust-bert) are in the order of the 100s of MBs to GBs. This impacts the hardware requirements and model inference time. A GPU Setup is recommended.
+
+
 # Use
 
 Add to your `Cargo.toml` manifest:
@@ -52,11 +74,13 @@ fn main() -> anyhow::Result<()> {
 
 ```
 ``` 
-[0.7316134185712937, 0.17592926565828138, 0.7340029761904763, 0.010054703866156384, 0.7400900873289896, 0.11926537059602724]
+[0.7556460210069226, 0.10628275662417444, 0.5515625, 0.0, 0.6143134447463007, 0.15900739517397644]
 
 [1.0, 0.0, 1.0, 0.0, 1.0, 0.0]
 ```
 # Training Data
+Trained and tested with the following training data.
+
 ```
 enronSpamSubset.csv
 ---------------
@@ -86,84 +110,37 @@ count ham: 4825
 governance_proposal_spam_likelihood.csv 
 --------------- 
 
-
-Total SPAM/HAM: 27982
+Total spam/ham: 27982
 
 ```
 # Model Eval 
  
-Trained and tested with the training data above.
+```
+Test results on train/test dataset with split ratio of 80%/20%
+```
+```
+original, only including topics and sentiements:
+Threshold >= 0.4: True Positive = 1484, False Positive = 348, Precision = 0.810, Recall = 0.800, F-Score = 0.805
 
-```
-Test results on train/test dataset with split ratio 0.7/0.3 
-```
-``` 
-Threshold >= 0.1: True Positive = 2690, False Positive = 3328, Precision = 0.447, Recall = 0.990, F-Score = 0.616
-Threshold >= 0.2: True Positive = 2612, False Positive = 1811, Precision = 0.591, Recall = 0.961, F-Score = 0.732
-Threshold >= 0.3: True Positive = 2454, False Positive = 934, Precision = 0.724, Recall = 0.903, F-Score = 0.804
-Threshold >= 0.4: True Positive = 2280, False Positive = 465, Precision = 0.831, Recall = 0.839, F-Score = 0.835
-Threshold >= 0.5: True Positive = 2067, False Positive = 210, Precision = 0.908, Recall = 0.760, F-Score = 0.828
-Threshold >= 0.6: True Positive = 1795, False Positive = 89, Precision = 0.953, Recall = 0.660, F-Score = 0.780
-Threshold >= 0.7: True Positive = 1458, False Positive = 36, Precision = 0.976, Recall = 0.536, F-Score = 0.692
-Threshold >= 0.8: True Positive = 999, False Positive = 7, Precision = 0.993, Recall = 0.368, F-Score = 0.537
-Threshold >= 0.9: True Positive = 525, False Positive = 0, Precision = 1.000, Recall = 0.193, F-Score = 0.324
-```
-```
-(Naive Bayes prediction added to the feature vector)
-```
-```
-Threshold >= 0.1: True Positive = 2583, False Positive = 1887, Precision = 0.578, Recall = 0.981, F-Score = 0.727
-Threshold >= 0.2: True Positive = 2526, False Positive = 705, Precision = 0.782, Recall = 0.960, F-Score = 0.862
-Threshold >= 0.3: True Positive = 2441, False Positive = 267, Precision = 0.901, Recall = 0.927, F-Score = 0.914
-Threshold >= 0.4: True Positive = 2346, False Positive = 118, Precision = 0.952, Recall = 0.891, F-Score = 0.921
-Threshold >= 0.5: True Positive = 2272, False Positive = 73, Precision = 0.969, Recall = 0.863, F-Score = 0.913
-Threshold >= 0.6: True Positive = 2160, False Positive = 53, Precision = 0.976, Recall = 0.821, F-Score = 0.892
-Threshold >= 0.7: True Positive = 1951, False Positive = 34, Precision = 0.983, Recall = 0.741, F-Score = 0.845
-Threshold >= 0.8: True Positive = 1685, False Positive = 15, Precision = 0.991, Recall = 0.640, F-Score = 0.778
-Threshold >= 0.9: True Positive = 1328, False Positive = 2, Precision = 0.998, Recall = 0.505, F-Score = 0.670
+with 'hard-coded' features (counts):
+Threshold >= 0.4: True Positive = 1523, False Positive = 298, Precision = 0.836, Recall = 0.847, F-Score = 0.841
 
+with 'hard-coded' features (counts + naive bayes):
+Threshold >= 0.5: True Positive = 1603, False Positive = 64, Precision = 0.962, Recall = 0.896, F-Score = 0.928 
 ```
-Increased risk of overfitting, it's important to perform an evaluation with a train/test dataset split, to check if the performance increases for unseen data.
+```
+Test results on train=test dataset.
+```
+```
+with 'hard-coded' features (counts + naive bayes):
+Threshold >= 0.4: True Positive = 8860, False Positive = 168, Precision = 0.981, Recall = 0.983, F-Score = 0.982
+```
 
-- [x] here adding the Naive Bayes predictions increases the performance for unseen data.
+```Note: If you are okay with few emails incorrectly not classified as fraud and do not want any ham email classified as fraud, select a higher threshold.```
 
-```
-Test results on train/test dataset being equal
-```
-``` 
-Threshold >= 0.1: True Positive = 9010, False Positive = 7030, Precision = 0.562, Recall = 1.000, F-Score = 0.719
-Threshold >= 0.2: True Positive = 9006, False Positive = 2527, Precision = 0.781, Recall = 0.999, F-Score = 0.877
-Threshold >= 0.3: True Positive = 8986, False Positive = 784, Precision = 0.920, Recall = 0.997, F-Score = 0.957
-Threshold >= 0.4: True Positive = 8907, False Positive = 182, Precision = 0.980, Recall = 0.988, F-Score = 0.984
-Threshold >= 0.5: True Positive = 8718, False Positive = 29, Precision = 0.997, Recall = 0.967, F-Score = 0.982
-Threshold >= 0.6: True Positive = 8184, False Positive = 2, Precision = 1.000, Recall = 0.908, F-Score = 0.952
-Threshold >= 0.7: True Positive = 7197, False Positive = 1, Precision = 1.000, Recall = 0.799, F-Score = 0.888
-Threshold >= 0.8: True Positive = 5671, False Positive = 0, Precision = 1.000, Recall = 0.629, F-Score = 0.772
-Threshold >= 0.9: True Positive = 3324, False Positive = 0, Precision = 1.000, Recall = 0.369, F-Score = 0.539
-```
-```
-(Naive Bayes prediction added to the feature vector)
-```
-```
-Threshold >= 0.1: True Positive = 9010, False Positive = 3092, Precision = 0.745, Recall = 1.000, F-Score = 0.853
-Threshold >= 0.2: True Positive = 9007, False Positive = 1011, Precision = 0.899, Recall = 0.999, F-Score = 0.947
-Threshold >= 0.3: True Positive = 8948, False Positive = 358, Precision = 0.962, Recall = 0.993, F-Score = 0.977
-Threshold >= 0.4: True Positive = 8848, False Positive = 169, Precision = 0.981, Recall = 0.982, F-Score = 0.982
-Threshold >= 0.5: True Positive = 8707, False Positive = 81, Precision = 0.991, Recall = 0.966, F-Score = 0.978
-Threshold >= 0.6: True Positive = 8525, False Positive = 27, Precision = 0.997, Recall = 0.946, F-Score = 0.971
-Threshold >= 0.7: True Positive = 8251, False Positive = 3, Precision = 1.000, Recall = 0.916, F-Score = 0.956
-Threshold >= 0.8: True Positive = 7770, False Positive = 0, Precision = 1.000, Recall = 0.862, F-Score = 0.926
-Threshold >= 0.9: True Positive = 6686, False Positive = 0, Precision = 1.000, Recall = 0.742, F-Score = 0.852
-```
- 
-- p(>=0.4) has the best performance (~98%).
 
-```Note: This makes sense because the training data contains more ham than spam entries.``` 
 
-```If you are okay with few emails incorrectly not classified as fraud and do not want any ham email classified as fraud, select a higher threshold.```
- 
-
-# 
+# Outlook
 - **rust-bert-fraud-detection** can be further improved by finding a better set of [topics/fraud indicators](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/mod.rs) to be extracted and used for the classification. 
 - Using a better model for the topic extraction and sentiment prediction should also improve the fraud detection.
 - Replacing the [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) with a better model (Neural Network) might also improve the performance. 
@@ -189,3 +166,8 @@ Threshold >= 0.9: True Positive = 6686, False Positive = 0, Precision = 1.000, R
 - To later stop the service container:     
 ```sudo docker container ls```    
 ```sudo docker stop CONTAINER_ID```
+
+
+# 
+This project is part of [CosmosRustBot](https://github.com/Philipp-Sc/cosmos-rust-bot), which provides Governance Proposal Notifications for Cosmos Blockchains. The goal is automatically detect fraudulent and deceitful proposals to prevent users falling for crypto scams. The current model is very effective in detecting fake governance proposals.
+
