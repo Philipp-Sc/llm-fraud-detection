@@ -8,7 +8,7 @@ use rust_bert_fraud_detection_tools::build::create_naive_bayes_model;
 use rust_bert_fraud_detection_tools::build::data::{generate_shuffled_idx, split_vector};
 
 pub const SENTENCES: [&str;6] = [
-    "Lose up to 19% weight. Special promotion on our new weightloss.",
+    "You!!! Lose up to 19% weight. Special promotion on our new weightloss.",
     "Hi Bob, can you send me your machine learning homework?",
     "Don't forget our special promotion: -30% on men shoes, only today!",
     "Hi Bob, don't forget our meeting today at 4pm.",
@@ -107,7 +107,7 @@ fn naive_bayes_train_and_train_and_test_final_regression_model() -> anyhow::Resu
 
     let dataset = rust_bert_fraud_detection_tools::build::data::read_datasets_and_shuffle(&paths1[..],&shuffled_idx)?;
 
-    let (train_dataset, test_dataset) = split_vector(&dataset,0.7);
+    let (train_dataset, test_dataset) = split_vector(&dataset,0.8);
     let train_dataset = train_dataset.to_vec();
     let test_dataset = test_dataset.to_vec();
 
@@ -115,10 +115,10 @@ fn naive_bayes_train_and_train_and_test_final_regression_model() -> anyhow::Resu
 
     let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&paths[..],&shuffled_idx)?;
 
-    let (x_train, x_test) = split_vector(&x_dataset,0.7);
+    let (x_train, x_test) = split_vector(&x_dataset,0.8);
     let x_train = x_train.to_vec();
     let x_test = x_test.to_vec();
-    let (y_train, y_test) = split_vector(&y_dataset,0.7);
+    let (y_train, y_test) = split_vector(&y_dataset,0.8);
     let y_train = y_train.to_vec();
     let y_test = y_test.to_vec();
 
@@ -151,12 +151,12 @@ fn train_and_test_final_regression_model() -> anyhow::Result<()> {
 
     rust_bert_fraud_detection_tools::build::create_classification_model(&x_dataset,&y_dataset)?;
     rust_bert_fraud_detection_tools::build::test_classification_model(&x_dataset,&y_dataset)?;
-
 /*
-    let (x_train, x_test) = split_vector(&x_dataset,0.7);
+
+    let (x_train, x_test) = split_vector(&x_dataset,0.8);
     let x_train = x_train.to_vec();
     let x_test = x_test.to_vec();
-    let (y_train, y_test) = split_vector(&y_dataset,0.7);
+    let (y_train, y_test) = split_vector(&y_dataset,0.8);
     let y_train = y_train.to_vec();
     let y_test = y_test.to_vec();
 
