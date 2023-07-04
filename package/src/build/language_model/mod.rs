@@ -45,7 +45,7 @@ pub fn get_labels() -> Vec<String> {
     ].into_iter().flatten().map(|x| x.to_string()).collect()
 }
 
-pub fn get_topic_predictions(batch: &[&str], topic_pairs: &[[&str;2]])  -> anyhow::Result<Vec<Vec<f64>>> {
+pub fn get_topic_predictions(batch: &[&str], topics: &[&str])  -> anyhow::Result<Vec<Vec<f64>>> {
 
         let sequence_classification_model = SEQUENCE_CLASSIFICATION_MODEL.try_lock().unwrap();
 
@@ -54,80 +54,23 @@ pub fn get_topic_predictions(batch: &[&str], topic_pairs: &[[&str;2]])  -> anyho
             output.push(Vec::new());
         }
 
-
-        for topics in topic_pairs {
-
-            let mut output_for_pair: Vec<Vec<Label>>= sequence_classification_model.predict_multilabel(
-                &batch,
-                &topics,
-                None, /*Some(Box::new(|label: &str| {
-                    format!("This example is about {}.", label)
-                }))*/
-                128,
-            )?;
-            for i in 0..output.len(){
-                output[i].append(&mut output_for_pair[i]);
-            }
-
+        let mut output_for_pair: Vec<Vec<Label>>= sequence_classification_model.predict_multilabel(
+            &batch,
+            &topics,
+            None, /*Some(Box::new(|label: &str| {
+                format!("This example is about {}.", label)
+            }))*/
+            128,
+        )?;
+        for i in 0..output.len(){
+            output[i].append(&mut output_for_pair[i]);
         }
 
-    /*
-    let output: Vec<Vec<Label>>= SEQUENCE_CLASSIFICATION_MODEL.try_lock().unwrap().predict_multilabel(
-        input,
-        topics,
-        Some(Box::new(|label: &str| {
-            format!("This example is about {}.", label)
-        })),
-        128,
-    )?;*/
     Ok(output.iter().map(|x| x.iter().map(|y| y.score).collect::<Vec<f64>>()).collect())
 }
 
 
 pub fn extract_topics(dataset: &Vec<(&str,&f64)>, topics: &[&str], path: Option<String>) -> anyhow::Result<Vec<Vec<Label>>> {
-
-    let sequence_classification_model = SEQUENCE_CLASSIFICATION_MODEL.try_lock().unwrap();
-
-    let mut list_outputs: Vec<Vec<Vec<Label>>> = Vec::new();
-
-    let chunks = 16;
-    let total_batches = dataset.len() / chunks;
-    let mut completed_batches = 0;
-
-    for batch in dataset.chunks(chunks) {
-
-        println!("\nProcessing batch {}/{}", completed_batches + 1, total_batches);
-
-        let output: Vec<Vec<Label>>= sequence_classification_model.predict_multilabel(
-            &batch.iter().map(|x| x.0).collect::<Vec<&str>>()[..],
-            topics,
-            Some(Box::new(|label: &str| {
-                format!("This example is about {}.", label)
-            })),
-            128,
-        )?;
-        list_outputs.push(output);
-        completed_batches += 1;
-
-        if let Some(ref path) = path {
-            let features: Vec<Vec<f64>> = list_outputs
-                .iter()
-                .flatten()
-                .map(|x| x.iter().map(|y| y.score).collect::<Vec<f64>>()).collect();
-            let json_string = serde_json::json!({"predictions":&features,"dataset":dataset, "topics":topics}).to_string();
-
-            fs::write(&path, &json_string).ok();
-        }
-    }
-
-    println!("Total batches processed: {}", total_batches);
-
-    let outputs: Vec<Vec<Label>> = list_outputs.into_iter().flatten().collect();
-
-    Ok(outputs)
-}
-
-pub fn extract_topic_pairs(dataset: &Vec<(&str,&f64)>, topic_pairs: &[[&str;2]], path: Option<String>) -> anyhow::Result<Vec<Vec<Label>>> {
 
     let sequence_classification_model = SEQUENCE_CLASSIFICATION_MODEL.try_lock().unwrap();
 
@@ -144,26 +87,23 @@ pub fn extract_topic_pairs(dataset: &Vec<(&str,&f64)>, topic_pairs: &[[&str;2]],
         println!("\nProcessing batch {}/{}", completed_batches + 1, total_batches);
 
         let mut output: Vec<Vec<Label>> = Vec::new();
-	for _ in 0..batch.len() {
-	    output.push(Vec::new());
-	}
-
-        for topics in topic_pairs {
-
-            print!(".");
-            let mut output_for_pair: Vec<Vec<Label>>= sequence_classification_model.predict_multilabel(
-                &batch,
-                &topics,
-                None, /*Some(Box::new(|label: &str| {
-                    format!("This example is about {}.", label)
-                }))*/
-                128,
-            )?;
-            for i in 0..output.len(){
-                output[i].append(&mut output_for_pair[i]);
-            }
-
+        for _ in 0..batch.len() {
+            output.push(Vec::new());
         }
+
+        let mut output_for_pair: Vec<Vec<Label>>= sequence_classification_model.predict_multilabel(
+            &batch,
+            &topics,
+            None, /*Some(Box::new(|label: &str| {
+                format!("This example is about {}.", label)
+            }))*/
+            128,
+        )?;
+        print!(".");
+        for i in 0..output.len(){
+            output[i].append(&mut output_for_pair[i]);
+        }
+
 
         list_outputs.push(output);
         completed_batches += 1;
@@ -178,7 +118,7 @@ pub fn extract_topic_pairs(dataset: &Vec<(&str,&f64)>, topic_pairs: &[[&str;2]],
             .iter()
             .flatten()
             .map(|x| x.iter().map(|y| y.score).collect::<Vec<f64>>()).collect();
-        let json_string = serde_json::json!({"predictions":&features,"dataset":dataset, "topics":topic_pairs}).to_string();
+        let json_string = serde_json::json!({"predictions":&features,"dataset":dataset, "topics":topics}).to_string();
 
         fs::write(&path, &json_string).ok();
     }

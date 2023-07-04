@@ -103,7 +103,7 @@ pub fn feature_importance(x_dataset_shuffled: &Vec<Vec<f64>>, y_dataset_shuffled
 
     let importances_means: Vec<f64> = importances.importances_means;
     let mut result: Vec<(f64, String)> = importances_means.into_iter().zip(super::data::get_x_labels()).collect();
-    result.sort_by(|(a,_), (b,_)| a.partial_cmp(&b).unwrap_or(Ordering::Equal));
+    result.sort_by(|(a,_), (b,_)| b.partial_cmp(&a).unwrap_or(Ordering::Equal));
 
     println!("Result: {:?}", result);
 

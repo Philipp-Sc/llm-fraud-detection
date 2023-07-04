@@ -93,7 +93,7 @@ fn naive_bayes_train_and_train_and_test_final_regression_model() -> anyhow::Resu
         "lingSpam",
         "smsspamcollection",
         "completeSpamAssassin",
-        "governance_proposal_spam_likelihood"].into_iter().map(|x| format!("data_gen_v4_({}).json",x)).collect::<Vec<String>>();
+        "governance_proposal_spam_likelihood"].into_iter().map(|x| format!("data_gen_v5_({}).json",x)).collect::<Vec<String>>();
     let paths = data_paths.iter().map(|x| x.as_str()).collect::<Vec<&str>>();
 
     let shuffled_idx = generate_shuffled_idx(&paths[..])?;
@@ -142,7 +142,7 @@ fn feature_selection() -> anyhow::Result<()> {
         "lingSpam",
         "smsspamcollection",
         "completeSpamAssassin",
-        "governance_proposal_spam_likelihood"].into_iter().map(|x| format!("data_gen_v4_({}).json", x)).collect::<Vec<String>>();
+        "governance_proposal_spam_likelihood"].into_iter().map(|x| format!("data_gen_v5_({}).json", x)).collect::<Vec<String>>();
     let paths = data_paths.iter().map(|x| x.as_str()).collect::<Vec<&str>>();
 
     let shuffled_idx = generate_shuffled_idx(&paths[..])?;
@@ -161,7 +161,7 @@ fn train_and_test_final_regression_model() -> anyhow::Result<()> {
         "lingSpam",
         "smsspamcollection",
         "completeSpamAssassin",
-        "governance_proposal_spam_likelihood"].into_iter().map(|x| format!("data_gen_v4_({}).json",x)).collect::<Vec<String>>();
+        "governance_proposal_spam_likelihood"].into_iter().map(|x| format!("data_gen_v5_({}).json",x)).collect::<Vec<String>>();
     let paths = data_paths.iter().map(|x| x.as_str()).collect::<Vec<&str>>();
 
     let shuffled_idx = generate_shuffled_idx(&paths[..])?;
@@ -204,7 +204,7 @@ fn naive_bayes_train() -> anyhow::Result<()>{
         "lingSpam",
         "smsspamcollection",
         "completeSpamAssassin",
-        "governance_proposal_spam_likelihood"].into_iter().map(|x| format!("data_gen_v4_({}).json",x)).collect::<Vec<String>>();
+        "governance_proposal_spam_likelihood"].into_iter().map(|x| format!("data_gen_v5_({}).json",x)).collect::<Vec<String>>();
     let paths = data_paths.iter().map(|x| x.as_str()).collect::<Vec<&str>>();
 
     let shuffled_idx = generate_shuffled_idx(&paths[..])?;
@@ -233,7 +233,7 @@ fn naive_bayes_train() -> anyhow::Result<()>{
 fn generate_feature_vectors() -> anyhow::Result<()> {
 
     // test governance spam ham
-    // let training_data_path = "new_data_gen_v4_(governance_proposal_spam_likelihood).json";
+    // let training_data_path = "new_data_gen_v5_(governance_proposal_spam_likelihood).json";
     // rust_bert_fraud_detection_tools::build::create_training_data(vec!["./dataset/governance_proposal_spam_likelihood.csv"],training_data_path)?;
 
 
@@ -246,7 +246,7 @@ fn generate_feature_vectors() -> anyhow::Result<()> {
         "governance_proposal_spam_likelihood"];
 
     for dataset in datasets {
-        let training_data_path = format!("data_gen_v4_({}).json",dataset);
+        let training_data_path = format!("data_gen_v5_({}).json",dataset);
         let dataset_path = format!("./dataset/{}.csv",dataset);
 
         rust_bert_fraud_detection_tools::build::create_training_data(vec![&dataset_path],&training_data_path)?;
