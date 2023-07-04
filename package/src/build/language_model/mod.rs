@@ -54,16 +54,18 @@ pub fn get_topic_predictions(batch: &[&str], topics: &[&str])  -> anyhow::Result
             output.push(Vec::new());
         }
 
-        let mut output_for_pair: Vec<Vec<Label>>= sequence_classification_model.predict_multilabel(
-            &batch,
-            &topics,
-            None, /*Some(Box::new(|label: &str| {
-                format!("This example is about {}.", label)
-            }))*/
-            128,
-        )?;
-        for i in 0..output.len(){
-            output[i].append(&mut output_for_pair[i]);
+        for topic in topics {
+            let mut output_for_pair: Vec<Vec<Label>> = sequence_classification_model.predict_multilabel(
+                &batch,
+                &[*topic],
+                None, /*Some(Box::new(|label: &str| {
+                    format!("This example is about {}.", label)
+                }))*/
+                128,
+            )?;
+            for i in 0..output.len() {
+                output[i].append(&mut output_for_pair[i]);
+            }
         }
 
     Ok(output.iter().map(|x| x.iter().map(|y| y.score).collect::<Vec<f64>>()).collect())
@@ -91,17 +93,19 @@ pub fn extract_topics(dataset: &Vec<(&str,&f64)>, topics: &[&str], path: Option<
             output.push(Vec::new());
         }
 
-        let mut output_for_pair: Vec<Vec<Label>>= sequence_classification_model.predict_multilabel(
-            &batch,
-            &topics,
-            None, /*Some(Box::new(|label: &str| {
+        for topic in topics {
+            let mut output_for_pair: Vec<Vec<Label>> = sequence_classification_model.predict_multilabel(
+                &batch,
+                &[*topic],
+                None, /*Some(Box::new(|label: &str| {
                 format!("This example is about {}.", label)
             }))*/
-            128,
-        )?;
-        print!(".");
-        for i in 0..output.len(){
-            output[i].append(&mut output_for_pair[i]);
+                128,
+            )?;
+            print!(".");
+            for i in 0..output.len() {
+                output[i].append(&mut output_for_pair[i]);
+            }
         }
 
 
