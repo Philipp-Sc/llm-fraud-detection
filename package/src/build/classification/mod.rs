@@ -92,7 +92,7 @@ pub fn feature_importance(x_dataset_shuffled: &Vec<Vec<f64>>, y_dataset_shuffled
 
     let opts = Opts {
         verbose: true,
-        kind: Some(ScoreKind::Smape),
+        kind: Some(ScoreKind::Mae),
         n: Some(100),
         only_means: true,
         scale: true,
