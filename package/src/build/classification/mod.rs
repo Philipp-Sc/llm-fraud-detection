@@ -9,9 +9,22 @@ use std::sync::Mutex;
 
 use std::fs;
 
+use importance::*;
+use importance::score::*;
+
 lazy_static::lazy_static! {
         static ref MODEL: Arc<Mutex<RandomForestRegressor<f64>>> = Arc::new(Mutex::new(get_model().unwrap()));
     }
+
+struct MockModel;
+
+impl Model for MockModel {
+    fn predict(&self, x: &Vec<Vec<f64>>) -> Vec<f64> {
+        let model = get_model().unwrap();
+        let x = DenseMatrix::from_2d_array(&x.iter().map(|x| &x[..]).collect::<Vec<&[f64]>>()[..]);
+        model.predict(&x).unwrap()
+    }
+}
 
 fn get_model() -> anyhow::Result<RandomForestRegressor<f64>>{
     let model: RandomForestRegressor<f64> = match serde_json::from_str(&fs::read_to_string("./RandomForestRegressor.bin")?)? {
@@ -69,4 +82,24 @@ pub fn test_regression_model(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>) ->
         );
     }
     Ok(())
+}
+
+
+pub fn feature_importance(x_dataset_shuffled: &Vec<Vec<f64>>, y_dataset_shuffled: &Vec<f64>) -> anyhow::Result<()> {
+
+    let model = MockModel;
+
+    let opts = Opts {
+        verbose: true,
+        kind: Some(ScoreKind::Smape),
+        n: Some(1),
+        only_means: true,
+        scale: true,
+    };
+
+    let importances = importance(&model, x_dataset_shuffled.to_vec().into_iter().take(10).collect(), y_dataset_shuffled.to_vec().into_iter().take(10).collect(), opts);
+    println!("Importances: {:?}", importances);
+
+    Ok(())
+
 }

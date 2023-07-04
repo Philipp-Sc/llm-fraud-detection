@@ -4,6 +4,7 @@ use std::time::Duration;
 use rust_bert_fraud_detection_tools::service::spawn_rust_bert_fraud_detection_socket_service;
 use std::env;
 use rust_bert_fraud_detection_socket_ipc::ipc::client_send_rust_bert_fraud_detection_request;
+use rust_bert_fraud_detection_tools::build::classification::feature_importance;
 use rust_bert_fraud_detection_tools::build::create_naive_bayes_model;
 use rust_bert_fraud_detection_tools::build::data::{generate_shuffled_idx, split_vector};
 
@@ -45,6 +46,7 @@ fn main() -> anyhow::Result<()> {
         "train_and_test_final_regression_model" => {train_and_test_final_regression_model();},
         "generate_feature_vectors" => {generate_feature_vectors();},
         "service" => {service();},
+        "feature_selection" => {feature_selection();},
         _ => {panic!()}
     }
 
@@ -133,6 +135,23 @@ fn naive_bayes_train_and_train_and_test_final_regression_model() -> anyhow::Resu
 }
 
 
+fn feature_selection() -> anyhow::Result<()> {
+    let data_paths = vec![
+        "youtubeSpamCollection",
+        "enronSpamSubset",
+        "lingSpam",
+        "smsspamcollection",
+        "completeSpamAssassin",
+        "governance_proposal_spam_likelihood"].into_iter().map(|x| format!("data_gen_v4_({}).json", x)).collect::<Vec<String>>();
+    let paths = data_paths.iter().map(|x| x.as_str()).collect::<Vec<&str>>();
+
+    let shuffled_idx = generate_shuffled_idx(&paths[..])?;
+
+    let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&paths[..], &shuffled_idx)?;
+
+
+    feature_importance(&x_dataset, &y_dataset)
+}
 
 fn train_and_test_final_regression_model() -> anyhow::Result<()> {
 
@@ -148,10 +167,9 @@ fn train_and_test_final_regression_model() -> anyhow::Result<()> {
     let shuffled_idx = generate_shuffled_idx(&paths[..])?;
 
     let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&paths[..],&shuffled_idx)?;
+   // rust_bert_fraud_detection_tools::build::create_classification_model(&x_dataset,&y_dataset)?;
+   // rust_bert_fraud_detection_tools::build::test_classification_model(&x_dataset,&y_dataset)?;
 
-    rust_bert_fraud_detection_tools::build::create_classification_model(&x_dataset,&y_dataset)?;
-    rust_bert_fraud_detection_tools::build::test_classification_model(&x_dataset,&y_dataset)?;
-/*
 
     let (x_train, x_test) = split_vector(&x_dataset,0.8);
     let x_train = x_train.to_vec();
@@ -162,7 +180,7 @@ fn train_and_test_final_regression_model() -> anyhow::Result<()> {
 
     rust_bert_fraud_detection_tools::build::create_classification_model(&x_train,&y_train)?;
     rust_bert_fraud_detection_tools::build::test_classification_model(&x_test,&y_test)?;
-*/
+
     let fraud_probabilities = rust_bert_fraud_detection_tools::fraud_probabilities(&SENTENCES)?;
     println!("Predictions:\n{:?}",fraud_probabilities);
     println!("Labels:\n[1.0, 0.0, 1.0, 0.0, 1.0, 0.0]");

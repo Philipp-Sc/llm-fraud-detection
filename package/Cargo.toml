@@ -17,8 +17,10 @@ path = "src/main.rs"
 
 
 [dependencies]
+importance = { git="https://github.com/philipp-sc/importance.git" }
 linfa = { git="https://github.com/rust-ml/linfa.git", features = ["serde"] }
 linfa-preprocessing = { git="https://github.com/rust-ml/linfa.git", features = ["serde"] }
+linfa-reduction = { git="https://github.com/rust-ml/linfa.git" }
 linfa-bayes = { git="https://github.com/rust-ml/linfa.git", features = ["serde"] }
 ndarray = "0.15.6"
 serde = {version = "1.0", features=["derive"]}

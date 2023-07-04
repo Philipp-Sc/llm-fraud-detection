@@ -8,6 +8,7 @@ pub mod language_model;
 pub mod feature_engineering;
 pub mod sentiment;
 pub mod naive_bayes;
+pub mod feature_selection;
 
 
 use data::read_datasets;
