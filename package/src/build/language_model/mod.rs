@@ -12,6 +12,39 @@ lazy_static::lazy_static! {
         static ref SEQUENCE_CLASSIFICATION_MODEL: Arc<Mutex<ZeroShotClassificationModel>> = Arc::new(Mutex::new(ZeroShotClassificationModel::new(Default::default()).unwrap()));
     }
 
+pub fn get_labels() -> Vec<String> {
+    vec![
+        ["Clickbait, suspected spam, fake news, sensationalism, hype", "Authentic, verified news/information"],
+        ["Aggressive marketing, advertising, selling, promotion, authoritative, commanding", "Informative content, unbiased information"],
+        ["Call to immediate action", "No urgency or pressure to take action, passive suggestion"],
+        ["Suspicious, questionable, dubious", "Trustworthy, credible, reliable"],
+        ["Untrustworthy, not to be trusted, unreliable source, blacklisted", "Reputable source"],
+        ["Misleading or deceptive information: The product advertisement made false claims about the benefits of the product.", "Accurate, transparent information"],
+        ["Of importance, significant, crucial", "Insignificant, inconsequential"],
+        ["Giveaway, tokens, airdrops, rewards, gratis, claim now", "No incentives or rewards provided"],
+        ["To hide illegal activity", " Legal, lawful activity"],
+        ["Exaggeration or hyperbole", "Factual, restrained language"],
+        ["Sensationalism in headlines", "Balanced, informative headlines"],
+        ["Bias or slant", "Objective, unbiased reporting"],
+        ["Editorial or opinion pieces", "Fact-based reporting"],
+        ["Unverified or unverified content", "Fact-checking or verification"],
+        ["Sponsored content or native advertising", "Independent, non-sponsored content"],
+        ["User-generated content", "Professional journalism or organization-created content"],
+        ["Comparing reputation, bias, credibility", "News sources or media outlets"],
+        ["Irresponsible consumption and ecological degradation", "Sustainable practices and environmental impact"],
+        ["Harassment/threatening", "Constructive communication"],
+        ["Violence", "Peaceful behavior"],
+        ["Sexual", "Non-sexual in nature"],
+        ["Hate", "Expressing kindness and acceptance"],
+        ["Self-harm", "Promoting well-being and self-care"],
+        ["Sexual/minors", "Content appropriate for all ages"],
+        ["Hate/threatening", "Positive and supportive communication"],
+        ["Violence/graphic", "Non-violent and non-graphic"],
+        ["Self-harm/intent", "Encouraging positive intentions"],
+        ["Self-harm/instructions", "Promoting safety and well-being"],
+    ].into_iter().flatten().map(|x| x.to_string()).collect()
+}
+
 pub fn get_topic_predictions(batch: &[&str], topic_pairs: &[[&str;2]])  -> anyhow::Result<Vec<Vec<f64>>> {
 
         let sequence_classification_model = SEQUENCE_CLASSIFICATION_MODEL.try_lock().unwrap();
@@ -160,13 +193,15 @@ pub fn extract_topic_pairs(dataset: &Vec<(&str,&f64)>, topic_pairs: &[[&str;2]],
 // from each file, creates a dataset by combining the predicted values and labels,
 // and returns a tuple containing the dataset and the corresponding labels.
 
-pub fn load_topics_from_file(paths: &[&str]) -> anyhow::Result<(Vec<Vec<f64>>, Vec<f64>)> {
+pub fn load_topics_from_file_and_add_hard_coded_features(paths: &[&str]) -> anyhow::Result<(Vec<Vec<f64>>, Vec<f64>)> {
 
     // Initialize an empty vector to store the predicted values for each path.
     let mut list_sequence_classification_multi_label_prediction: Vec<serde_json::Value> = Vec::new();
 
     // Iterate through each path provided.
     for path in paths {
+        println!("Processing file: {}", path);
+
         // Read the contents of a file that is expected to be present in the directory
         // named "language_model_extract_topics_<path>".
         let sequence_classification_multi_label_prediction: serde_json::Value = match fs::read_to_string(format!("language_model_extract_topics_{}", path)) {
@@ -175,12 +210,13 @@ pub fn load_topics_from_file(paths: &[&str]) -> anyhow::Result<(Vec<Vec<f64>>, V
             Ok(file) => {
                 match serde_json::from_str(&file) {
                     Ok(res) => {
+                        println!("Successfully read and parsed JSON for file: {}", path);
                         res
                     }
                     // If parsing the JSON value fails, print the error and append a default value
                     // to the list_sequence_classification_multi_label_prediction vector.
                     Err(err) => {
-                        println!("{:?}", err);
+                        println!("Error parsing JSON for file: {}: {:?}", path, err);
                         Default::default()
                     }
                 }
@@ -188,7 +224,7 @@ pub fn load_topics_from_file(paths: &[&str]) -> anyhow::Result<(Vec<Vec<f64>>, V
             // If the file cannot be read, print the error and append a default value
             // to the list_sequence_classification_multi_label_prediction vector.
             Err(err) => {
-                println!("{:?}", err);
+                println!("Error parsing JSON for file: {}: {:?}", path, err);
                 Default::default()
             }
         };
@@ -197,61 +233,35 @@ pub fn load_topics_from_file(paths: &[&str]) -> anyhow::Result<(Vec<Vec<f64>>, V
         list_sequence_classification_multi_label_prediction.push(sequence_classification_multi_label_prediction);
     }
 
-    // Initialize two empty vectors to store the predicted values and labels.
-    let mut predictions: Vec<Vec<f64>> = Vec::new();
-    let mut labels: Vec<(String, f64)> = Vec::new();
+    let (x_dataset, y_dataset): (Vec<Vec<f64>>, Vec<f64>) = list_sequence_classification_multi_label_prediction
+        .iter()
+        .flat_map(|sequence_classification_multi_label_prediction| {
+            sequence_classification_multi_label_prediction["predictions"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|topics| topics.as_array().unwrap().into_iter().map(|x| x.as_f64().unwrap()).collect::<Vec<f64>>())
+                .zip(
+                    sequence_classification_multi_label_prediction["dataset"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|entry| {
+                            let entry = entry.as_array().unwrap();
+                            (
+                                entry[0].as_str().unwrap().to_string(),
+                                entry[1].as_f64().unwrap(),
+                            )
+                        })
+                        .filter(|(text, _)| text != "empty"),
+                ).map(|(mut topics,(text,label))|{
+                    topics.append(&mut get_features(text.to_owned()));
+                    (topics,label)
+                })
+        })
+        .unzip();
 
-    // Iterate through each element of the list_sequence_classification_multi_label_prediction vector.
-    for sequence_classification_multi_label_prediction in list_sequence_classification_multi_label_prediction {
-        // Extract the predicted values and append them to the predictions vector.
-        for list_p in sequence_classification_multi_label_prediction["predictions"].as_array().unwrap() {
-            predictions.push(list_p.as_array().unwrap().into_iter().map(|x| x.as_f64().unwrap()).collect());
-        }
-        // Extract the labels and append them to the labels vector as tuples.
-        for each in sequence_classification_multi_label_prediction["dataset"].as_array().unwrap() {
-            let entry = each.as_array().unwrap();
-            labels.push((entry[0].as_str().unwrap().to_string(), entry[1].as_f64().unwrap()));
-        }
-    }
+    println!("Final x_dataset and y_dataset both contain {} entries.", y_dataset.len());
 
-    // Print the lengths of the predictions and labels vectors and assert that they are equal.
-    println!("len of predictions: {}", predictions.len());
-    println!("len of labels: {}", labels.len());
-    assert_eq!(predictions.len(), labels.len());
-
-    // Create a dataset by combining the predicted values and labels and filtering out
-    // any labels with a string value of "empty".
-    let mut dataset: Vec<(&Vec<f64>, &(String, f64))> = Vec::new();
-    for i in 0..predictions.len() {
-        if labels[i].0 != "empty" {
-            dataset.push((&predictions[i], &labels[i]));
-        }
-    }
-
-    // Print the length of the dataset.
-    println!("len of dataset: {}",dataset.len());
-
-    // Initialize empty vectors to hold the new features and labels.
-    let mut x_dataset: Vec<Vec<f64>> = Vec::new();
-    let mut y_dataset: Vec<f64> = Vec::new();
-
-    // Loop through each item in the dataset.
-    for each in &dataset {
-        // Create a new list by cloning the existing features and appending custom features.
-        let mut new_list = each.0.clone();
-        new_list.append(&mut get_features(each.1.0.to_owned()));
-
-        // Add the new features to the x_dataset vector and add the corresponding label to the y_dataset vector.
-        x_dataset.push(new_list);
-        y_dataset.push(each.1.1);
-    }
-
-    // Check that the x_dataset and y_dataset vectors have the same length.
-    assert_eq!(x_dataset.len(),y_dataset.len());
-
-    // Print the length of the x_dataset and y_dataset vectors.
-    println!("len of x_dataset / y_dataset: {}",y_dataset.len());
-
-    // Return the x_dataset and y_dataset vectors as a tuple wrapped in an Ok Result.
     Ok((x_dataset,y_dataset))
 }

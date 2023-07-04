@@ -60,78 +60,62 @@ pub fn get_sentiment(text: &str) -> f64 {
     }
 }
 
-// This function loads sentiment data from files and returns two vectors, one for predictions and one for labels.
 pub fn load_sentiments_from_file(paths: &[&str]) -> anyhow::Result<(Vec<f64>,Vec<f64>)> {
-    // Initialize an empty vector to store the predicted values for each path.
     let mut list_sentiment_classifier_prediction: Vec<serde_json::Value> = Vec::new();
-    // Iterate through each path provided.
 
+    // Iterate through each path provided and load predictions.
     for path in paths {
-        // Read the contents of a file that is expected to be present in the directory
-        // named "sentiment_extract_sentiments_<path>".
-    let sentiment_classifier_prediction: serde_json::Value = match fs::read_to_string(format!("sentiment_extract_sentiments_{}",path)) {
-        // If the file exists and its contents can be parsed as JSON, parse the JSON value
-        // and append it to the list_sentiment_classifier_prediction vector.
-        Ok(file) => {
-            match serde_json::from_str(&file) {
-                Ok(res) => {
-                    res
-                }
-                // If parsing the JSON value fails, print the error and append a default value
-                // to the list_sentiment_classifier_prediction vector.
-                Err(err) => {
-                    println!("{:?}", err);
-                    Default::default()
+        println!("Processing file: {}", path);
+
+        // Try to read and parse the JSON file.
+        let sentiment_classifier_prediction: serde_json::Value = match fs::read_to_string(format!("sentiment_extract_sentiments_{}",path)) {
+            Ok(file) => {
+                match serde_json::from_str(&file) {
+                    Ok(res) => {
+                        println!("Successfully read and parsed JSON for file: {}", path);
+                        res
+                    }
+                    Err(err) => {
+                        println!("Error parsing JSON for file: {}: {:?}", path, err);
+                        Default::default()
+                    }
                 }
             }
-        }
-        // If the file cannot be read, print the error and append a default value
-        // to the list_sentiment_classifier_prediction vector.
-        Err(err) => {
-            println!("{:?}", err);
-            Default::default()
-        }
-    };
-        // Append the sentiment_classifier_prediction value to the vector.
-    list_sentiment_classifier_prediction.push(sentiment_classifier_prediction);
-    }
-    // Initialize two empty vectors to store the predicted values and labels.
-    let mut predictions: Vec<f64> = Vec::new();
-    let mut labels: Vec<(String,f64)> = Vec::new();
+            Err(err) => {
+                println!("Error reading file: {}: {:?}", path, err);
+                Default::default()
+            }
+        };
 
-    for sentiment_classifier_prediction in list_sentiment_classifier_prediction {
-
-    for sentiment in sentiment_classifier_prediction["sentiments"].as_array().unwrap() {
-        predictions.push(sentiment.as_f64().unwrap());
-    }
-    for each in sentiment_classifier_prediction["dataset"].as_array().unwrap() {
-        let entry = each.as_array().unwrap();
-        labels.push((entry[0].as_str().unwrap().to_string(),entry[1].as_f64().unwrap()));
+        list_sentiment_classifier_prediction.push(sentiment_classifier_prediction);
     }
 
-    }
-    println!("len of predictions: {}",predictions.len());
-    println!("len of labels: {}",labels.len());
-    assert_eq!(predictions.len(),labels.len());
+    let (x_dataset, y_dataset): (Vec<f64>, Vec<f64>) = list_sentiment_classifier_prediction
+        .iter()
+        .flat_map(|sentiment_classifier_prediction| {
+            sentiment_classifier_prediction["sentiments"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|sentiment| sentiment.as_f64().unwrap())
+                .zip(
+                    sentiment_classifier_prediction["dataset"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .map(|entry| {
+                            let entry = entry.as_array().unwrap();
+                            (
+                                entry[0].as_str().unwrap().to_string(),
+                                entry[1].as_f64().unwrap(),
+                            )
+                        })
+                        .filter(|(text, _)| text != "empty").map(|(text, label)| label),
+                )
+        })
+        .unzip();
 
-    let mut dataset: Vec<(&f64,&(String,f64))> = Vec::new();
-    for i in 0..predictions.len() {
-        if labels[i].0 != "empty" {
-            dataset.push((&predictions[i],&labels[i]));
-        }
-    }
-
-    println!("len of dataset: {}",dataset.len());
-
-    let mut x_dataset: Vec<f64> = Vec::new();
-    let mut y_dataset: Vec<f64> = Vec::new();
-    for each in &dataset {
-            x_dataset.push(*each.0);
-            y_dataset.push(each.1.1);
-    }
-
-    assert_eq!(x_dataset.len(),y_dataset.len());
-    println!("len of x_dataset / y_dataset: {}",y_dataset.len());
-
+    println!("Final x_dataset and y_dataset both contain {} entries.", y_dataset.len());
     Ok((x_dataset,y_dataset))
+
 }

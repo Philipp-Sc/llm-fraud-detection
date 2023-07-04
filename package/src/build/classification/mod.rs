@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use smartcore::linear::linear_regression::*;
 use smartcore::linear::linear_regression::LinearRegression;
 use smartcore::linalg::naive::dense_matrix::DenseMatrix;
@@ -92,13 +93,19 @@ pub fn feature_importance(x_dataset_shuffled: &Vec<Vec<f64>>, y_dataset_shuffled
     let opts = Opts {
         verbose: true,
         kind: Some(ScoreKind::Smape),
-        n: Some(1),
+        n: Some(100),
         only_means: true,
         scale: true,
     };
 
-    let importances = importance(&model, x_dataset_shuffled.to_vec().into_iter().take(10).collect(), y_dataset_shuffled.to_vec().into_iter().take(10).collect(), opts);
+    let importances = importance(&model, x_dataset_shuffled.to_owned(), y_dataset_shuffled.to_owned(), opts);
     println!("Importances: {:?}", importances);
+
+    let importances_means: Vec<f64> = importances.importances_means;
+    let mut result: Vec<(f64, String)> = importances_means.into_iter().zip(super::data::get_x_labels()).collect();
+    result.sort_by(|(a,_), (b,_)| a.partial_cmp(&b).unwrap_or(Ordering::Equal));
+
+    println!("Result: {:?}", result);
 
     Ok(())
 

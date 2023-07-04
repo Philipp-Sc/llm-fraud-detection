@@ -75,11 +75,14 @@ pub fn read_datasets_and_shuffle(paths: &[&str], shuffled_idx: &Vec<usize>) -> a
     Ok(dataset_shuffled)
 }
 
+pub fn get_x_labels() -> Vec<String> {
+    vec![super::language_model::get_labels(),super::feature_engineering::get_labels(),vec!["Sentiment".to_string()]].into_iter().flatten().collect()
+}
 
 pub fn create_dataset(paths: &[&str], shuffled_idx: &Vec<usize>) -> anyhow::Result<(Vec<Vec<f64>>,Vec<f64>)> {
 
 
-    let (mut x_dataset, y_dataset): (Vec<Vec<f64>>, Vec<f64>) = language_model::load_topics_from_file(paths)?;
+    let (mut x_dataset, y_dataset): (Vec<Vec<f64>>, Vec<f64>) = language_model::load_topics_from_file_and_add_hard_coded_features(paths)?;
     let (x_dataset_sentiment, _) = sentiment::load_sentiments_from_file(paths)?;
 
     assert_eq!(x_dataset.len(), x_dataset_sentiment.len());

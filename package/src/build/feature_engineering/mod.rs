@@ -15,6 +15,22 @@ lazy_static::lazy_static! {
         static ref RE_EMOJI: regex::Regex = regex::Regex::new(r"\p{Emoji}").unwrap();
      }
 
+pub fn get_labels() -> Vec<String> {
+    vec![
+        "categorical_nb_model_predict",
+        "gaussian_nb_model_predict",
+        "word_count.words",
+        "word_count.characters",
+        "word_count.whitespaces",
+        "word_count.cjk",
+        "RE_URL",
+        "RE_UPPER_CASE_WORD",
+        "RE_NON_STANDARD",
+        "RE_PUNCTUATION",
+        "RE_EMOJI"
+    ].into_iter().map(|x| x.to_string()).collect()
+}
+
 pub fn get_features(text: String) -> Vec<f64> {
 
     let mut features = Vec::new();
