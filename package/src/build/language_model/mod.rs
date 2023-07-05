@@ -6,6 +6,7 @@ use crate::build::feature_engineering::get_features;
 
 use std::sync::Arc;
 use std::sync::Mutex;
+use crate::build::FRAUD_INDICATORS;
 
 lazy_static::lazy_static! {
         //    Set-up model
@@ -13,36 +14,7 @@ lazy_static::lazy_static! {
     }
 
 pub fn get_labels() -> Vec<String> {
-    vec![
-        ["Clickbait, suspected spam, fake news, sensationalism, hype", "Authentic, verified news/information"],
-        ["Aggressive marketing, advertising, selling, promotion, authoritative, commanding", "Informative content, unbiased information"],
-        ["Call to immediate action", "No urgency or pressure to take action, passive suggestion"],
-        ["Suspicious, questionable, dubious", "Trustworthy, credible, reliable"],
-        ["Untrustworthy, not to be trusted, unreliable source, blacklisted", "Reputable source"],
-        ["Misleading or deceptive information: The product advertisement made false claims about the benefits of the product.", "Accurate, transparent information"],
-        ["Of importance, significant, crucial", "Insignificant, inconsequential"],
-        ["Giveaway, tokens, airdrops, rewards, gratis, claim now", "No incentives or rewards provided"],
-        ["To hide illegal activity", " Legal, lawful activity"],
-        ["Exaggeration or hyperbole", "Factual, restrained language"],
-        ["Sensationalism in headlines", "Balanced, informative headlines"],
-        ["Bias or slant", "Objective, unbiased reporting"],
-        ["Editorial or opinion pieces", "Fact-based reporting"],
-        ["Unverified or unverified content", "Fact-checking or verification"],
-        ["Sponsored content or native advertising", "Independent, non-sponsored content"],
-        ["User-generated content", "Professional journalism or organization-created content"],
-        ["Comparing reputation, bias, credibility", "News sources or media outlets"],
-        ["Irresponsible consumption and ecological degradation", "Sustainable practices and environmental impact"],
-        ["Harassment/threatening", "Constructive communication"],
-        ["Violence", "Peaceful behavior"],
-        ["Sexual", "Non-sexual in nature"],
-        ["Hate", "Expressing kindness and acceptance"],
-        ["Self-harm", "Promoting well-being and self-care"],
-        ["Sexual/minors", "Content appropriate for all ages"],
-        ["Hate/threatening", "Positive and supportive communication"],
-        ["Violence/graphic", "Non-violent and non-graphic"],
-        ["Self-harm/intent", "Encouraging positive intentions"],
-        ["Self-harm/instructions", "Promoting safety and well-being"],
-    ].into_iter().flatten().map(|x| x.to_string()).collect()
+    FRAUD_INDICATORS.into_iter().map(|x| x.to_string()).collect()
 }
 
 pub fn get_topic_predictions(batch: &[&str], topics: &[&str])  -> anyhow::Result<Vec<Vec<f64>>> {
