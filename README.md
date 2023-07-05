@@ -162,6 +162,13 @@ Threshold >= 0.4: True Positive = 1680, False Positive = 119, Precision = 0.934,
 ```
 First of all we can see that the model works also well on data it was not trained on.
 Secondly the selection with importance >= 0.01 still gets a performance close the the model trained on all 168 features, with only 35 of the total features!
+```
+Test results on train=test dataset.
+```
+```
+Selected features with importance >= 0.01:
+Threshold >= 0.4: True Positive = 8812, False Positive = 204, Precision = 0.977, Recall = 0.978, F-Score = 0.978
+```
 
 Feel free to evaluate your own features 'hard-coded' or topic classes and find out if you can improve the model.     
 Or just use the provided model to get rid of spam!
