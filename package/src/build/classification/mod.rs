@@ -13,6 +13,8 @@ use std::fs;
 use importance::*;
 use importance::score::*;
 
+pub mod deep_learning;
+
 lazy_static::lazy_static! {
         static ref MODEL: Arc<Mutex<RandomForestRegressor<f64>>> = Arc::new(Mutex::new(get_model().unwrap()));
     }

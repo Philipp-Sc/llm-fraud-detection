@@ -6,7 +6,7 @@ lazy_static::lazy_static! {
 
  //       static ref RE_NUMBER: regex::Regex = regex::Regex::new(r"\d+").unwrap();
 
- //       static ref RE_UPPER_CASE_WORD: regex::Regex = regex::Regex::new(r"\b[A-Z]+\b").unwrap();
+        static ref RE_UPPER_CASE_WORD: regex::Regex = regex::Regex::new(r"\b[A-Z]+\b").unwrap();
         
         static ref RE_NON_STANDARD: regex::Regex = regex::Regex::new(r"[^\w\s]").unwrap();
         
@@ -44,10 +44,10 @@ pub fn get_features(text: String) -> Vec<f64> {
     features.push(word_count.words as f64); // 8
     features.push(word_count.characters as f64); // 3
     features.push(word_count.whitespaces as f64); // 5
-    //features.push(word_count.cjk as f64);
+    features.push(word_count.cjk as f64);
 
     features.push(RE_URL.captures_iter(&text.to_lowercase()).count() as f64); // 9
-    //features.push(RE_UPPER_CASE_WORD.captures_iter(&text).count() as f64);
+    features.push(RE_UPPER_CASE_WORD.captures_iter(&text).count() as f64);
     features.push(RE_NON_STANDARD.captures_iter(&text).count() as f64); // 7
     features.push(RE_PUNCTUATION.captures_iter(&text).count() as f64); // 4
     features.push(RE_EMOJI.captures_iter(&text).count() as f64); // 6
