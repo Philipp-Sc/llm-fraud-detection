@@ -176,7 +176,7 @@ fn train_and_test_final_regression_model(eval: bool) -> anyhow::Result<()> {
 
     let x_dataset = x_dataset.iter().map(|features| {
         let mut features_new = Vec::new();
-        for i in importance.len(){
+        for i in 0..importance.len(){
             if importance[i]>=0.01 {
                 features_new.push(features[i]);
             }
