@@ -8,7 +8,7 @@
 # rust-bert-fraud-detection
 Robust semi-supervised fraud detection using Rust native NLP pipelines.
 # About
-**rust-bert-fraud-detection** uses the NLP pipelines from [rust-bert](https://github.com/guillaume-be/rust-bert) to extract [topics](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/mod.rs) (zero shot classification) and sentiment from the given text. A simple [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) is then trained to predict spam/ham.     
+**rust-bert-fraud-detection** uses the NLP pipelines from [rust-bert](https://github.com/guillaume-be/rust-bert) to extract [topic predictions](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/mod.rs) (fraud indicators) via zero shot classification and sentiment from the given text. A simple [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) is then trained to predict spam/ham.     
 
 The training data is generated from a diverse collection of commonly used spam/ham datasets:
 - Ling Spam,
@@ -19,29 +19,7 @@ The training data is generated from a diverse collection of commonly used spam/h
 - Crypto Governance Proposals.
 
 Since the [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) is trained on latent features  and NOT on a text encoding (such as Bag of Words) much less datapoints are needed to build a general and robust model which should work better accross different domains (e.g emails, websites and governance proposals).
-
-## 'hard-coded' features
-Additional ['hard-coded' features](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/feature_engineering/mod.rs) to improve the performance further have been evaluated and added:
-
-### Various Counts
-
-- word count information 
-- punctuation, number, url, emoji and upper-case counts
   
-Together these counts increase the models F-Score <ins>by approx. 4 percentage points</ins>.
-
-### Naive Bayes
-Naive Bayes classifier are well known for their effectiveness in text related tasks especially spam detection.  
-
-Two Naive Bayes classifiers have been trained on a Bag of Words representation of the spam/ham datasets.
-- [Categorical Naive Bayes classifier](https://docs.rs/smartcore/latest/smartcore/naive_bayes/categorical/struct.CategoricalNB.html) 
-- [Gaussian Naive Bayes classifier](https://docs.rs/crate/linfa-bayes/latest)
-  
-Adding the predictions of both of the classifiers to the 'hard-coded' features increases the F-Score <ins>by approx. 8 percentage points</ins>.
-
-#
-Note that the language models used by [rust-bert](https://github.com/guillaume-be/rust-bert) are in the order of the 100s of MBs to GBs. This impacts the hardware requirements and model inference time. A GPU Setup is recommended.
-
 
 # Use
 
@@ -78,8 +56,11 @@ fn main() -> anyhow::Result<()> {
 
 [1.0, 0.0, 1.0, 0.0, 1.0, 0.0]
 ```
-# Training Data
-Trained and tested with the following training data.
+
+# Evaluation
+
+## Training Data
+Trained and tested with the following datasets.
 
 ```
 enronSpamSubset.csv
@@ -113,112 +94,81 @@ governance_proposal_spam_likelihood.csv
 Total spam/ham: 27982
 
 ```
-# Model Eval 
+For the datasets above the topic predictions were generated, note that his is quite compute intensive.
+The language models used by [rust-bert](https://github.com/guillaume-be/rust-bert) are in the order of the 100s of MBs to GBs. This impacts the hardware requirements and model inference time. A GPU Setup is recommended.
+
+## 'hard-coded' features
+Additional ['hard-coded' features](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/feature_engineering/mod.rs) to improve the performance further have been evaluated. (See [Feature Selection](#feature-selection))
+
+### Counts
+
+- word count information 
+- punctuation, number, url, emoji and upper-case counts
+  
+### Naive Bayes
+Naive Bayes classifier are well known for their effectiveness in text related tasks especially spam detection.  
+
+Two Naive Bayes classifiers have been trained on a Bag of Words representation of the spam/ham datasets.
+- [Categorical Naive Bayes classifier](https://docs.rs/smartcore/latest/smartcore/naive_bayes/categorical/struct.CategoricalNB.html) 
+- [Gaussian Naive Bayes classifier](https://docs.rs/crate/linfa-bayes/latest)
  
-```
-Test results on train/test dataset with split ratio of 80%/20%
-```
-```
-original, only including topics and sentiements:
-Threshold >= 0.4: True Positive = 1484, False Positive = 348, Precision = 0.810, Recall = 0.800, F-Score = 0.805
 
-with 'hard-coded' features (counts):
-Threshold >= 0.4: True Positive = 1523, False Positive = 298, Precision = 0.836, Recall = 0.847, F-Score = 0.841
+## Model Eval 
 
-with 'hard-coded' features (counts + naive bayes):
-Threshold >= 0.5: True Positive = 1603, False Positive = 64, Precision = 0.962, Recall = 0.896, F-Score = 0.928 
-```
+First the random forest regressor has been trained on the whole dataset. This way the permutation feature [importance](https://github.com/Philipp-Sc/importance) of each feature can be calculated using the best model.
 ```
 Test results on train=test dataset.
 ```
-```
-with 'hard-coded' features (counts + naive bayes):
-Threshold >= 0.4: True Positive = 8860, False Positive = 168, Precision = 0.981, Recall = 0.983, F-Score = 0.982
-```
-
-```Note: If you are okay with few emails incorrectly not classified as fraud and do not want any ham email classified as fraud, select a higher threshold.```
-
-# Feature Selection
-To evaluate the [importance](https://github.com/Philipp-Sc/importance) of each feature, the permutation feature importance can be calculated.
-The permutation feature importance gives insights into if a feature were to be removed how big of an impact that would have on the prediction.
-
-This can be used to choose the best selection of topics for the regression model, here the feature importance for the final feature vector.
-```
-[
-    (9.086376113912465e-6, "word_count.cjk"),
-    (0.004034453249285218, "Non-violent and non-graphic"),
-    (0.005324294413963042, "Constructive communication"),
-    (0.005827449259040655, "Positive and supportive communication"),
-    (0.006223066476668216, "No incentives or rewards provided"),
-    (0.006563551860581945, "Independent, non-sponsored content"),
-    (0.007123618995493088, "Of importance, significant, crucial"),
-    (0.00740857068639711, " Legal, lawful activity"),
-    (0.007854385181545315, "Accurate, transparent information"),
-    (0.00789422471465604, "Promoting safety and well-being"),
-    (0.008073847945543562, "Fact-based reporting"),
-    (0.008366934279813191, "Violence"),
-    (0.008375809330124467, "Encouraging positive intentions"),
-    (0.008508853481252665, "Sensationalism in headlines"),
-    (0.008580862871139312, "Clickbait, suspected spam, fake news, sensationalism, hype"),
-    (0.008723133986315272, "Self-harm/intent"),
-    (0.00895157390379909, "Hate"),
-    (0.008956434768131915, "Editorial or opinion pieces"),
-    (0.009140870939864156, "Comparing reputation, bias, credibility"),
-    (0.009291844837106432, "News sources or media outlets"),
-    (0.009381422863818241, "Exaggeration or hyperbole"),
-    (0.009383558845243521, "Content appropriate for all ages"),
-    (0.009401790024017807, "Expressing kindness and acceptance"),
-    (0.009425146091599015, "Peaceful behavior"),
-    (0.00954302513175034, "Objective, unbiased reporting"),
-    (0.009782903419496442, "Irresponsible consumption and ecological degradation"),
-    (0.009910565959576427, "Balanced, informative headlines"),
-    (0.009943492321363004, "Self-harm"),
-    (0.009993740586036678, "Self-harm/instructions"),
-    (0.01017245592080146, "Authentic, verified news/information"),
-    (0.010352015161439417, "Non-sexual in nature"),
-    (0.010412195485727433, "No urgency or pressure to take action, passive suggestion"),
-    (0.010423104459689612, "User-generated content"),
-    (0.010608495436794351, "Sexual/minors"),
-    (0.011350892850297126, "Informative content, unbiased information"),
-    (0.011912903899710336, "Fact-checking or verification"),
-    (0.012082391536337007, "To hide illegal activity"),
-    (0.012210308980832056, "Violence/graphic"),
-    (0.012275316078200642, "Sexual"),
-    (0.01231813329430908, "Call to immediate action"),
-    (0.012423606938376446, "Unverified or unverified content"),
-    (0.012437072448810437, "Harassment/threatening"),
-    (0.01248475451095286, "Insignificant, inconsequential"),
-    (0.012532598496972015, "Trustworthy, credible, reliable"),
-    (0.012689446129423103, "RE_UPPER_CASE_WORD"),
-    (0.012893417359719384, "Factual, restrained language"),
-    (0.01322662973423574, "Promoting well-being and self-care"),
-    (0.015288903407796199, "Hate/threatening"),
-    (0.016624075889848777, "Sustainable practices and environmental impact"),
-    (0.0186854244071123, "RE_URL"),
-    (0.019041485610827854, "Sponsored content or native advertising"),
-    (0.019469899473026533, "Bias or slant"),
-    (0.020113527485557673, "Professional journalism or organization-created content"),
-    (0.021300966240153346, "Sentiment"),
-    (0.0229822419929682, "Suspicious, questionable, dubious"),
-    (0.024113325804709235, "Giveaway, tokens, airdrops, rewards, gratis, claim now"),
-    (0.030693022705165354, "Aggressive marketing, advertising, selling, promotion, authoritative, commanding"),
-    (0.031222142569675353, "Misleading or deceptive information: The product advertisement made false claims about the benefits of the product."),
-    (0.03995191816337255, "Reputable source"),
-    (0.049235910370057805, "Untrustworthy, not to be trusted, unreliable source, blacklisted"),
-    (0.0512166814802249, "word_count.words"),
-    (0.05201198982622269, "word_count.whitespaces"),
-    (0.06020768550255639, "RE_NON_STANDARD"),
-    (0.06285785980015532, "RE_EMOJI"),
-    (0.06465819453171368, "RE_PUNCTUATION"),
-    (0.06656562261134956, "word_count.characters"),
-    (0.17453288055514377, "categorical_nb_model_predict"),
-    (0.44235303668438497, "gaussian_nb_model_predict"),
-];
+``` 
+Threshold >= 0.4: True Positive = 8876, False Positive = 128, Precision = 0.986, Recall = 0.985, F-Score = 0.985
 ```
 
+## Feature Selection
+The permutation feature importance gives insights into if a feature were to be 'removed' how big of an impact that would have on the prediction error.
+```
+Permutation feature importance means:
+```
+```rust
+    (0.3985863423201774, "gaussian_nb_model_predict"),
+    (0.14208074954988376, "categorical_nb_model_predict"),
+    (0.05072013818401902, "word_count.characters"),
+    (0.04691123690753006, "Ethical advertising practices"),
+    (0.045243339951067274, "RE_PUNCTUATION"),
+    (0.03684411074134846, "Promotion of responsible digital citizenship"),
+    (0.036669126452287315, "Untrustworthy, not to be trusted, unreliable source, blacklisted"),
+    (0.032868717073914214, "word_count.whitespaces"),
+    (0.032794123803081186, "Political bias or agenda"),
+    (0.03093559093435697, "RE_EMOJI"),
+    (0.02994326629473548, "RE_NON_STANDARD"),
+    (0.029406976115361624, "word_count.words"),
+    (0.029013546987538587, "Reputable source"),
+    ...
+```
+[feature_importance.json](https://github.com/Philipp-Sc/importance)
+
+```
+To evaluate the selected features we evaluate them on the train/test dataset with split ratio of 80%/20%.
+```
+
+```
+Selected features with importance >= 0.01:
+Threshold >= 0.4: True Positive = 1700, False Positive = 94, Precision = 0.948, Recall = 0.939, F-Score = 0.943
+
+Selected features with importance >= 0.015:
+Threshold >= 0.4: True Positive = 1692, False Positive = 100, Precision = 0.944, Recall = 0.922, F-Score = 0.933
+
+Selected features with importance >= 0.02:
+Threshold >= 0.4: True Positive = 1680, False Positive = 119, Precision = 0.934, Recall = 0.911, F-Score = 0.922
+```
+First of all we can see that the model works also well on data it was not trained on.
+Secondly the selection with importance >= 0.01 still gets a performance close the the model trained on all 168 features, with only 35 of the total features!
+
+Feel free to evaluate your own features 'hard-coded' or topic classes and find out if you can improve the model.     
+Or just use the provided model to get rid of spam!
+ 
 
 # Outlook
-- **rust-bert-fraud-detection** can be further improved by finding a better set of [topics/fraud indicators](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/mod.rs) to be extracted and used for the classification. 
+- **rust-bert-fraud-detection** can be improved by finding a better set of [topics/fraud indicators](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/mod.rs) to be extracted and used for the classification. 
 - Using a better model for the topic extraction and sentiment prediction should also improve the fraud detection.
 - Replacing the [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) with a better model (Neural Network) might also improve the performance. 
 - Improving the performance of the [Naive Bayes classifier](https://docs.rs/crate/linfa-bayes/latest), including adjustments to the used count vectorizer.
