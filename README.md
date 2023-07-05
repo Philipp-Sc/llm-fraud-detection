@@ -144,7 +144,7 @@ Permutation feature importance means:
     (0.029013546987538587, "Reputable source"),
     ...
 ```
-[feature_importance.json](https://github.com/Philipp-Sc/importance)
+[feature_importance.json](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/feature_importance.txt)
 
 ```
 To evaluate the selected features we evaluate them on the train/test dataset with split ratio of 80%/20%.
@@ -175,7 +175,7 @@ Or just use the provided model to get rid of spam!
  
 
 # Outlook
-- **rust-bert-fraud-detection** can be improved by finding a better set of [topics/fraud indicators](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/mod.rs) to be extracted and used for the classification. 
+- **rust-bert-fraud-detection** may be improved by finding a better set of [topics/fraud indicators](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/mod.rs) to be extracted and used for the classification. 
 - Using a better model for the topic extraction and sentiment prediction should also improve the fraud detection.
 - Replacing the [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) with a better model (Neural Network) might also improve the performance. 
 - Improving the performance of the [Naive Bayes classifier](https://docs.rs/crate/linfa-bayes/latest), including adjustments to the used count vectorizer.
