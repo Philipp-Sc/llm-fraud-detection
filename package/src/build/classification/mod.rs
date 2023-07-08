@@ -69,11 +69,16 @@ pub fn test_regression_model(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>) ->
     let model = get_model()?;
     let y_hat = model.predict(&x).unwrap();
 
+    let thresholds = vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
+    calculate_metrics(&y,&y_hat, &thresholds);
+    Ok(())
+}
 
-    for ii in vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9] {
-        let true_positive_count = (0..y.len()).filter(|&i| y_hat[i] >= ii && y[i] >= 0.5).count();
-        let false_positive_count = (0..y.len()).filter(|&i| y_hat[i] >= ii && y[i] < 0.5).count();
-        let false_negative_count = (0..y.len()).filter(|&i| y_hat[i] < ii && y[i] >= 0.5).count();
+pub fn calculate_metrics(y: &[f64], y_hat: &[f64], thresholds: &[f64]) {
+    for &threshold in thresholds {
+        let true_positive_count = y_hat.iter().zip(y.iter()).filter(|(&y_hat_val, &y_val)| y_hat_val >= threshold && y_val >= 0.5).count();
+        let false_positive_count = y_hat.iter().zip(y.iter()).filter(|(&y_hat_val, &y_val)| y_hat_val >= threshold && y_val < 0.5).count();
+        let false_negative_count = y_hat.iter().zip(y.iter()).filter(|(&y_hat_val, &y_val)| y_hat_val < threshold && y_val >= 0.5).count();
 
         let precision = true_positive_count as f64 / (true_positive_count + false_positive_count) as f64;
         let recall = true_positive_count as f64 / (true_positive_count + false_negative_count) as f64;
@@ -81,11 +86,11 @@ pub fn test_regression_model(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>) ->
 
         println!(
             "Threshold >= {}: True Positive = {}, False Positive = {}, Precision = {:.3}, Recall = {:.3}, F-Score = {:.3}",
-            ii, true_positive_count, false_positive_count, precision, recall, f_score
+            threshold, true_positive_count, false_positive_count, precision, recall, f_score
         );
     }
-    Ok(())
 }
+
 
 
 pub fn feature_importance(x_dataset_shuffled: &Vec<Vec<f64>>, y_dataset_shuffled: &Vec<f64>) -> anyhow::Result<()> {
