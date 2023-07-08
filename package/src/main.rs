@@ -46,6 +46,7 @@ fn main() -> anyhow::Result<()> {
         "train_and_test_final_regression_model_eval" => {train_and_test_final_regression_model(true);},
         "train_and_test_final_regression_model" => {train_and_test_final_regression_model(false);},
         "train_and_test_final_nn_model" => {train_and_test_final_nn_model(false);},
+        "train_and_test_final_nn_model_eval" => {train_and_test_final_nn_model(true);},
         "generate_feature_vectors" => {generate_feature_vectors();},
         "service" => {service();},
         "feature_selection" => {feature_selection();},
