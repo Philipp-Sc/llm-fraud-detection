@@ -82,12 +82,13 @@ pub fn train_nn(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>) -> Predictor {
     let device = tch::Device::cuda_if_available();
     let vs = nn::VarStore::new(device);
 
-    let inputs: Vec<Vec<f32>> = x_dataset.into_iter().map(|x| x.into_iter().map(|y| *y as f32).collect()).collect();
-    let input_tensor = Tensor::from_slice(&inputs.concat()).reshape(&[-1, inputs[0].len() as i64 ]);
-    let targets: Vec<Vec<f32>> = y_dataset.into_iter().map(|x| vec![(if x > &1.0 {1.0}else if x < &0.0 {0.0}else{*x}) as f32] ).collect();
+    let x_len = x_dataset[0].len() as i64;
+    let inputs: Vec<f32> = x_dataset.into_iter().flatten().map(|x| (if x.is_nan(){0.0}else{*x}) as f32).collect();
+    let input_tensor = Tensor::from_slice(&inputs).reshape(&[-1, x_len ]);
+    let targets: Vec<Vec<f32>> = y_dataset.into_iter().map(|x| vec![(if x > &1.0 {1.0}else if x < &0.0 {0.0}else if x.is_nan(){0.0}else{*x}) as f32] ).collect();
     let target_tensor = Tensor::from_slice(&targets.concat()).reshape(&[-1, targets[0].len() as i64]);
 
-    let predictor = Predictor::new(&vs.root(), inputs[0].len() as i64);
+    let predictor = Predictor::new(&vs.root(), x_len);
     let mut optimizer = nn::Adam::default().build(&vs, 1e-3).unwrap();
 
     for epoch in 0..500 {
