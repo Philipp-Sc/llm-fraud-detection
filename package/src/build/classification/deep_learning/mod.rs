@@ -91,7 +91,7 @@ pub fn train_nn(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>) -> Predictor {
 
     let y_len = 1;
     let input_tensor = Tensor::from_slice(&x_dataset.into_iter().flatten().map(|x| *x as f32).collect::<Vec<f32>>()).reshape(&[-1, x_len ]);
-    let target_tensor = Tensor::from_slice(&y_dataset.into_iter().map(|x| vec![*x as f32] ).flatten().collect::<Vec<f32>>()).reshape(&[-1, y_len as i64]);
+    let target_tensor = Tensor::from_slice(&y_dataset.into_iter().map(|x| vec![*x as f32] ).flatten().map(|x| if x > 1.0 {1.0}else if x < 0.0 {0.0}else{x}).collect::<Vec<f32>>()).reshape(&[-1, y_len as i64]);
 
     let mut optimizer = nn::Adam::default().build(&vs, 1e-3).unwrap();
 
