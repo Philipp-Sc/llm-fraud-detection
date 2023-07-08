@@ -72,7 +72,7 @@ impl Module for Predictor {
             .relu()
             .dropout(self.dropout_p, true)
             .apply(&self.linear5)
-            .sigmoid();
+            .sigmoid().maximum(&Tensor::from_slice(&[0.0])).minimum(&Tensor::from_slice(&[1.0]));
         output
     }
 }
