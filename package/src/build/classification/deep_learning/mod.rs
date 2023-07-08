@@ -2,6 +2,8 @@ use ndarray::{Array, Array1};
 use tch::{nn, nn::Module, nn::OptimizerConfig, Kind, Tensor, Device};
 use crate::build::classification::calculate_metrics;
 
+use rand::seq::SliceRandom;
+use rand::thread_rng;
 // Define your predictor model
 #[derive(Debug)]
 pub struct Predictor {
@@ -71,8 +73,7 @@ impl Module for Predictor {
             .apply_t(&self.batch_norm4, true)
             .relu()
             .dropout(self.dropout_p, true)
-            .apply(&self.linear5)
-            .sigmoid();
+            .apply(&self.linear5);
         output
     }
 }
@@ -83,26 +84,40 @@ pub fn train_nn(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>) -> Predictor {
     let vs = nn::VarStore::new(device);
 
     let x_len = x_dataset[0].len() as i64;
-    let inputs: Vec<f32> = x_dataset.into_iter().flatten().map(|x| (if x.is_nan(){0.0}else{*x}) as f32).collect();
-    let input_tensor = Tensor::from_slice(&inputs).reshape(&[-1, x_len ]);
+    let inputs: Vec<Vec<f32>> = x_dataset.into_iter().map(|y| y.into_iter().map(|x| *x as f32).collect()).collect();
     let targets: Vec<Vec<f32>> = y_dataset.into_iter().map(|x| vec![(if x > &1.0 {1.0}else if x < &0.0 {0.0}else if x.is_nan(){0.0}else{*x}) as f32] ).collect();
-    let target_tensor = Tensor::from_slice(&targets.concat()).reshape(&[-1, targets[0].len() as i64]);
 
     let predictor = Predictor::new(&vs.root(), x_len);
     let mut optimizer = nn::Adam::default().build(&vs, 1e-3).unwrap();
+    let mut rng = thread_rng();  // Initialize the random number generator
 
-    for epoch in 0..500 {
-        let output = predictor.forward(&input_tensor);
-        //let loss = output.mse_loss(&target_tensor, tch::Reduction::Mean);
-        //let loss = output.binary_cross_entropy(&output, Some(&target_tensor), tch::Reduction::Mean);
-        let loss = output.binary_cross_entropy_with_logits(&output, Some(&target_tensor),None, tch::Reduction::Mean);
+    let batch_size = 500;  // Define the desired batch size
 
-        optimizer.zero_grad();
-        loss.backward();
-        optimizer.step();
-        let loss_val = loss.double_value(&[]);
-        if epoch % 10 == 0 {
-            println!("Epoch: {:?}, Loss: {:?}", epoch, loss_val);
+    let input_chunks = inputs.chunks(batch_size);
+    let target_chunks = targets.chunks(batch_size);
+
+    for epoch in 0..100 {
+        let mut epoch_loss = 0.0;
+
+        let mut shuffled_chunks = input_chunks.clone().zip(target_chunks.clone()).collect::<Vec<_>>();
+        let shuffled_chunks = &mut shuffled_chunks[..];
+        shuffled_chunks.shuffle(&mut rng);
+
+        for (input_chunk, target_chunk) in shuffled_chunks {
+
+            let input_tensor = Tensor::from_slice(&input_chunk.concat()).reshape(&[-1, x_len]);
+            let target_tensor = Tensor::from_slice(&target_chunk.concat()).reshape(&[-1, targets[0].len() as i64]);
+
+            let output = predictor.forward(&input_tensor);
+            let loss = output.mse_loss(&target_tensor, tch::Reduction::Mean);
+            optimizer.zero_grad();
+            loss.backward();
+            optimizer.step();
+            epoch_loss = loss.double_value(&[]);
+        }
+
+        if epoch % 5 == 0 {
+            println!("Epoch: {:?}, Loss: {:?}", epoch, epoch_loss);
         }
     }
     predictor
