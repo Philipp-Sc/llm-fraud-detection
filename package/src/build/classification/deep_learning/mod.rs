@@ -94,7 +94,9 @@ pub fn train_nn(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>) -> Predictor {
     for epoch in 0..500 {
         let output = predictor.forward(&input_tensor);
         //let loss = output.mse_loss(&target_tensor, tch::Reduction::Mean);
-        let loss = output.binary_cross_entropy(&output, Some(&target_tensor), tch::Reduction::Mean);
+        //let loss = output.binary_cross_entropy(&output, Some(&target_tensor), tch::Reduction::Mean);
+        let loss = output.binary_cross_entropy_with_logits(&output, Some(&target_tensor),None, tch::Reduction::Mean);
+
         optimizer.zero_grad();
         loss.backward();
         optimizer.step();
