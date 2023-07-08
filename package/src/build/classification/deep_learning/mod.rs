@@ -72,7 +72,7 @@ impl Module for Predictor {
             .relu()
             .dropout(self.dropout_p, true)
             .apply(&self.linear5)
-            .sigmoid().maximum(&Tensor::from_slice(&[0.0])).minimum(&Tensor::from_slice(&[1.0]));
+            .sigmoid();
         output
     }
 }
@@ -81,18 +81,13 @@ impl Module for Predictor {
 pub fn train_nn(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>) -> Predictor {
     let device = tch::Device::cuda_if_available();
     let vs = nn::VarStore::new(device);
-    let x_len = x_dataset[0].len() as i64;
 
-    let predictor = Predictor::new(&vs.root(),x_len);
+    let inputs: Vec<Vec<f32>> = x_dataset.into_iter().map(|x| x.into_iter().map(|y| *y as f32).collect()).collect();
+    let input_tensor = Tensor::from_slice(&inputs.concat()).reshape(&[-1, inputs[0].len() as i64 ]);
+    let targets: Vec<Vec<f32>> = y_dataset.into_iter().map(|x| vec![(if x > &1.0 {1.0}else if x < &0.0 {0.0}else{*x}) as f32] ).collect();
+    let target_tensor = Tensor::from_slice(&targets.concat()).reshape(&[-1, targets[0].len() as i64]);
 
-    // Here is a simple toy dataset with multiple samples. Replace it with your actual dataset.
-    //let inputs: Vec<Vec<f32>> = vec![vec![1.0, 2.0, 3.0, 4.0, 5.0],vec![1.0, 2.0, 3.0, 4.0, 5.0], vec![6.0, 7.0, 8.0, 9.0, 10.0]];
-    //let targets: Vec<Vec<f32>>  = vec![vec![1.0,0.0],vec![1.0,0.0], vec![1.0,0.0]]; // Each target corresponds to a sample
-
-    let y_len = 1;
-    let input_tensor = Tensor::from_slice(&x_dataset.into_iter().flatten().map(|x| *x as f32).collect::<Vec<f32>>()).reshape(&[-1, x_len ]);
-    let target_tensor = Tensor::from_slice(&y_dataset.into_iter().map(|x| vec![*x as f32] ).flatten().map(|x| if x > 1.0 {1.0}else if x < 0.0 {0.0}else{x}).collect::<Vec<f32>>()).reshape(&[-1, y_len as i64]);
-
+    let predictor = Predictor::new(&vs.root(), inputs[0].len() as i64);
     let mut optimizer = nn::Adam::default().build(&vs, 1e-3).unwrap();
 
     for epoch in 0..500 {
