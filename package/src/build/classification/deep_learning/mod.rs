@@ -15,13 +15,11 @@ pub struct Predictor {
     linear4: nn::Linear,
     linear5: nn::Linear,
     linear6: nn::Linear,
-    linear7: nn::Linear,
     batch_norm1: nn::BatchNorm,
     batch_norm2: nn::BatchNorm,
     batch_norm3: nn::BatchNorm,
     batch_norm4: nn::BatchNorm,
     batch_norm5: nn::BatchNorm,
-    batch_norm6: nn::BatchNorm,
     dropout_p: f64,
 }
 
@@ -33,22 +31,19 @@ impl Predictor {
         let hidden_size3 = 32*factor;
         let hidden_size4 = 16*factor;
         let hidden_size5 = 8*factor;
-        let hidden_size6 = 4*factor;
 
         let linear1 = nn::linear(vs, input_size, hidden_size1, Default::default());
         let linear2 = nn::linear(vs, hidden_size1, hidden_size2, Default::default());
         let linear3 = nn::linear(vs, hidden_size2, hidden_size3, Default::default());
         let linear4 = nn::linear(vs, hidden_size3, hidden_size4, Default::default());
         let linear5 = nn::linear(vs, hidden_size4, hidden_size5, Default::default());
-        let linear6 = nn::linear(vs, hidden_size5, hidden_size6, Default::default());
-        let linear7 = nn::linear(vs, hidden_size6, 1, Default::default());
+        let linear6 = nn::linear(vs, hidden_size5, 1, Default::default());
 
         let batch_norm1 = nn::batch_norm1d(vs, hidden_size1, Default::default());
         let batch_norm2 = nn::batch_norm1d(vs, hidden_size2, Default::default());
         let batch_norm3 = nn::batch_norm1d(vs, hidden_size3, Default::default());
         let batch_norm4 = nn::batch_norm1d(vs, hidden_size4, Default::default());
         let batch_norm5 = nn::batch_norm1d(vs, hidden_size5, Default::default());
-        let batch_norm6 = nn::batch_norm1d(vs, hidden_size6, Default::default());
 
         let dropout_p = 0.5;
 
@@ -59,13 +54,11 @@ impl Predictor {
             linear4,
             linear5,
             linear6,
-            linear7,
             batch_norm1,
             batch_norm2,
             batch_norm3,
             batch_norm4,
             batch_norm5,
-            batch_norm6,
             dropout_p,
         }
     }
@@ -95,10 +88,6 @@ impl Module for Predictor {
             .relu()
             .dropout(self.dropout_p, true)
             .apply(&self.linear6)
-            .apply_t(&self.batch_norm6, true)
-            .relu()
-            .dropout(self.dropout_p, true)
-            .apply(&self.linear7)
             .sigmoid();
         output
     }
@@ -123,7 +112,7 @@ pub fn train_nn(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>) -> Predictor {
     let input_chunks = inputs.chunks(batch_size);
     let target_chunks = targets.chunks(batch_size);
 
-    for epoch in 0..1000 {
+    for epoch in 0..2000 {
         let mut epoch_loss = 0.0;
 
         let mut shuffled_chunks = input_chunks.clone().zip(target_chunks.clone()).collect::<Vec<_>>();
