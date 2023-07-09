@@ -106,8 +106,8 @@ pub fn train_nn(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>) -> Predictor {
 
         for (input_chunk, target_chunk) in shuffled_chunks {
 
-            let input_tensor = Tensor::from_slice(&input_chunk.concat()).reshape(&[-1, x_len]);
-            let target_tensor = Tensor::from_slice(&target_chunk.concat()).reshape(&[-1, targets[0].len() as i64]);
+            let input_tensor = Tensor::from_slice(&input_chunk.concat()).reshape(&[-1, x_len]).to_device(device);
+            let target_tensor = Tensor::from_slice(&target_chunk.concat()).reshape(&[-1, targets[0].len() as i64]).to_device(device);
 
             let output = predictor.forward(&input_tensor);
             //let loss = output.mse_loss(&target_tensor, tch::Reduction::Mean);
@@ -127,9 +127,10 @@ pub fn train_nn(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>) -> Predictor {
 
 
 pub fn test_nn(predictor: &Predictor, x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>)  {
+    let device = tch::Device::cuda_if_available();
 
     let x_len = x_dataset[0].len() as i64;
-    let input_tensor = Tensor::from_slice(&x_dataset.into_iter().flatten().map(|x| *x as f32).collect::<Vec<f32>>()).reshape(&[-1, x_len ]);
+    let input_tensor = Tensor::from_slice(&x_dataset.into_iter().flatten().map(|x| *x as f32).collect::<Vec<f32>>()).reshape(&[-1, x_len ]).to_device(device);
 
     let predictions: Vec<Vec<f32>> = predictor.forward(&input_tensor).try_into().unwrap();
     let predictions: Vec<f64> = predictions.iter().flatten().map(|x| *x as f64).collect();
