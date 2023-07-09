@@ -21,10 +21,12 @@ pub struct Predictor {
 
 impl Predictor {
     fn new(vs: &nn::Path, input_size: i64) -> Self {
-        let hidden_size1 = input_size * 4;
-        let hidden_size2 = hidden_size1 * 2;
-        let hidden_size3 = hidden_size1;
-        let hidden_size4 = hidden_size1 * 2;
+        let factor = 2;
+        let hidden_size1 = 128*factor;
+        let hidden_size2 = 64*factor;
+        let hidden_size3 = 32*factor;
+        let hidden_size4 = 16*factor;
+
 
         let linear1 = nn::linear(vs, input_size, hidden_size1, Default::default());
         let linear2 = nn::linear(vs, hidden_size1, hidden_size2, Default::default());
@@ -137,4 +139,95 @@ pub fn test_nn(predictor: &Predictor, x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec
     let thresholds = vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
 
     calculate_metrics(y_dataset,&predictions,&thresholds);
+}
+
+
+
+pub fn z_score_normalize(x_dataset: &Vec<Vec<f64>>, mean_std_dev: Option<(Vec<f64>,Vec<f64>)>) -> (Vec<Vec<f64>>, Vec<f64>, Vec<f64>) {
+
+    // Calculate mean and standard deviation of x_dataset
+    let (mean, std_dev) = if let Some(tuple) = mean_std_dev {
+        tuple
+    }else{
+        calculate_mean_std_dev(x_dataset)
+    };
+
+    // Apply z-score normalization
+    let normalized_x = x_dataset
+        .iter()
+        .map(|row| {
+            row.iter()
+                .enumerate()
+                .map(|(i, val)| (val - mean[i]) / std_dev[i])
+                .collect::<Vec<f64>>()
+        })
+        .collect::<Vec<Vec<f64>>>();
+
+    (normalized_x, mean, std_dev)
+}
+
+
+fn calculate_mean_std_dev(x_dataset: &Vec<Vec<f64>>) -> (Vec<f64>, Vec<f64>) {
+    let num_features = x_dataset[0].len();
+    let num_samples = x_dataset.len() as f64;
+
+    let mean: Vec<f64> = (0..num_features)
+        .map(|i| {
+            let sum: f64 = x_dataset.iter().map(|row| row[i]).sum();
+            sum / num_samples
+        })
+        .collect();
+
+    let std_dev: Vec<f64> = (0..num_features)
+        .map(|i| {
+            let squared_diff: f64 = x_dataset
+                .iter()
+                .map(|row| (row[i] - mean[i]).powi(2))
+                .sum();
+            (squared_diff / (num_samples - 1.0)).sqrt()
+        })
+        .collect();
+
+    (mean, std_dev)
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_calculate_mean_std_dev() {
+        let x_dataset = vec![
+            vec![1.0, 2.0, 3.0],
+            vec![2.0, 3.0, 4.0],
+            vec![3.0, 4.0, 5.0],
+        ];
+
+        let (mean, std_dev) = calculate_mean_std_dev(&x_dataset);
+
+        println!("{:?}",(&mean, &std_dev));
+
+        assert_eq!(mean, vec![2.0, 3.0, 4.0]);
+        assert_eq!(std_dev, vec![1.0, 1.0, 1.0]);
+    }
+
+    #[test]
+    fn test_z_score_normalize() {
+        let x_dataset = vec![
+            vec![1.0, 2.0, 3.0],
+            vec![2.0, 3.0, 4.0],
+            vec![3.0, 4.0, 5.0],
+        ];
+
+        let (normalized_x, mean, std_dev) = z_score_normalize(&x_dataset, None);
+
+        assert_eq!(normalized_x, vec![
+            vec![-1.0, -1.0, -1.0],
+            vec![0.0, 0.0, 0.0],
+            vec![1.0, 1.0, 1.0],
+        ]);
+        assert_eq!(mean, vec![2.0, 3.0, 4.0]);
+        assert_eq!(std_dev, vec![1.0, 1.0, 1.0]);
+    }
 }
