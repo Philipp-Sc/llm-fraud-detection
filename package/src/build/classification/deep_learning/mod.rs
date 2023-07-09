@@ -5,6 +5,8 @@ use crate::build::classification::calculate_metrics;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 
+use std::fs::File;
+use std::path::Path;
 
 // Define your predictor model
 #[derive(Debug)]
@@ -25,7 +27,7 @@ pub struct Predictor {
 
 impl Predictor {
     fn new(vs: &nn::Path, input_size: i64) -> Self {
-        let factor = 2;
+        let factor = 8;
         let hidden_size1 = 128*factor;
         let hidden_size2 = 64*factor;
         let hidden_size3 = 32*factor;
@@ -62,7 +64,94 @@ impl Predictor {
             dropout_p,
         }
     }
+    pub fn save(&self, path: &Path) -> tch::Result<()> {
+        // Prepare the named tensors
+        let named_tensors = vec![
+            ("linear1_weights", &self.linear1.ws),
+            ("linear1_biases", self.linear1.bs.as_ref().unwrap()),
+            ("linear2_weights", &self.linear2.ws),
+            ("linear2_biases", self.linear2.bs.as_ref().unwrap()),
+            ("linear3_weights", &self.linear3.ws),
+            ("linear3_biases", self.linear3.bs.as_ref().unwrap()),
+            ("linear4_weights", &self.linear4.ws),
+            ("linear4_biases", self.linear4.bs.as_ref().unwrap()),
+            ("linear5_weights", &self.linear5.ws),
+            ("linear5_biases", self.linear5.bs.as_ref().unwrap()),
+            ("linear6_weights", &self.linear6.ws),
+            ("linear6_biases", self.linear6.bs.as_ref().unwrap()),
+            ("batch_norm1_running_mean", &self.batch_norm1.running_mean),
+            ("batch_norm1_running_var", &self.batch_norm1.running_var),
+            ("batch_norm1_weights", self.batch_norm1.ws.as_ref().unwrap()),
+            ("batch_norm1_biases", self.batch_norm1.bs.as_ref().unwrap()),
+            ("batch_norm2_running_mean", &self.batch_norm2.running_mean),
+            ("batch_norm2_running_var", &self.batch_norm2.running_var),
+            ("batch_norm2_weights", self.batch_norm2.ws.as_ref().unwrap()),
+            ("batch_norm2_biases", self.batch_norm2.bs.as_ref().unwrap()),
+            ("batch_norm3_running_mean", &self.batch_norm3.running_mean),
+            ("batch_norm3_running_var", &self.batch_norm3.running_var),
+            ("batch_norm3_weights", self.batch_norm3.ws.as_ref().unwrap()),
+            ("batch_norm3_biases", self.batch_norm3.bs.as_ref().unwrap()),
+            ("batch_norm4_running_mean", &self.batch_norm4.running_mean),
+            ("batch_norm4_running_var", &self.batch_norm4.running_var),
+            ("batch_norm4_weights", self.batch_norm4.ws.as_ref().unwrap()),
+            ("batch_norm4_biases", self.batch_norm4.bs.as_ref().unwrap()),
+            ("batch_norm5_running_mean", &self.batch_norm5.running_mean),
+            ("batch_norm5_running_var", &self.batch_norm5.running_var),
+            ("batch_norm5_weights", self.batch_norm5.ws.as_ref().unwrap()),
+            ("batch_norm5_biases", self.batch_norm5.bs.as_ref().unwrap()),
+        ];
+
+        // Save the tensors
+        tch::Tensor::save_multi(&named_tensors, path)
+    }
+
+    pub fn load(&mut self, path: &Path) -> tch::Result<()> {
+        // Load the tensors
+        let named_tensors = tch::Tensor::load_multi(path)?;
+
+        // Assign the tensors to the corresponding fields
+        for (name, tensor) in named_tensors {
+            match name.as_str() {
+                "linear1_weights" => self.linear1.ws = tensor,
+                "linear1_biases" => self.linear1.bs = Some(tensor),
+                "linear2_weights" => self.linear2.ws = tensor,
+                "linear2_biases" => self.linear2.bs = Some(tensor),
+                "linear3_weights" => self.linear3.ws = tensor,
+                "linear3_biases" => self.linear3.bs = Some(tensor),
+                "linear4_weights" => self.linear4.ws = tensor,
+                "linear4_biases" => self.linear4.bs = Some(tensor),
+                "linear5_weights" => self.linear5.ws = tensor,
+                "linear5_biases" => self.linear5.bs = Some(tensor),
+                "linear6_weights" => self.linear6.ws = tensor,
+                "linear6_biases" => self.linear6.bs = Some(tensor),
+                "batch_norm1_running_mean" => self.batch_norm1.running_mean = tensor,
+                "batch_norm1_running_var" => self.batch_norm1.running_var = tensor,
+                "batch_norm1_weights" => self.batch_norm1.ws = Some(tensor),
+                "batch_norm1_biases" => self.batch_norm1.bs = Some(tensor),
+                "batch_norm2_running_mean" => self.batch_norm2.running_mean = tensor,
+                "batch_norm2_running_var" => self.batch_norm2.running_var = tensor,
+                "batch_norm2_weights" => self.batch_norm2.ws = Some(tensor),
+                "batch_norm2_biases" => self.batch_norm2.bs = Some(tensor),
+                "batch_norm3_running_mean" => self.batch_norm3.running_mean = tensor,
+                "batch_norm3_running_var" => self.batch_norm3.running_var = tensor,
+                "batch_norm3_weights" => self.batch_norm3.ws = Some(tensor),
+                "batch_norm3_biases" => self.batch_norm3.bs = Some(tensor),
+                "batch_norm4_running_mean" => self.batch_norm4.running_mean = tensor,
+                "batch_norm4_running_var" => self.batch_norm4.running_var = tensor,
+                "batch_norm4_weights" => self.batch_norm4.ws = Some(tensor),
+                "batch_norm4_biases" => self.batch_norm4.bs = Some(tensor),
+                "batch_norm5_running_mean" => self.batch_norm5.running_mean = tensor,
+                "batch_norm5_running_var" => self.batch_norm5.running_var = tensor,
+                "batch_norm5_weights" => self.batch_norm5.ws = Some(tensor),
+                "batch_norm5_biases" => self.batch_norm5.bs = Some(tensor),
+                _ => {}
+            }
+        }
+
+        Ok(())
+    }
 }
+
 
 impl Module for Predictor {
     fn forward(&self, input: &Tensor) -> Tensor {
@@ -93,6 +182,12 @@ impl Module for Predictor {
     }
 }
 
+pub fn get_new_nn(x_len: i64) -> Predictor {
+    let device = tch::Device::cuda_if_available();
+    let vs = nn::VarStore::new(device);
+    let predictor = Predictor::new(&vs.root(), x_len);
+    predictor
+}
 
 pub fn train_nn(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>) -> Predictor {
     let device = tch::Device::cuda_if_available();
@@ -107,12 +202,12 @@ pub fn train_nn(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>) -> Predictor {
 
     let mut rng = thread_rng();  // Initialize the random number generator
 
-    let batch_size = 256;  // Define the desired batch size
+    let batch_size = 512;//256;  // Define the desired batch size
 
     let input_chunks = inputs.chunks(batch_size);
     let target_chunks = targets.chunks(batch_size);
 
-    for epoch in 0..2000 {
+    for epoch in 0..1000 {
         let mut epoch_loss = 0.0;
 
         let mut shuffled_chunks = input_chunks.clone().zip(target_chunks.clone()).collect::<Vec<_>>();

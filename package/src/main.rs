@@ -7,7 +7,7 @@ use rust_bert_fraud_detection_socket_ipc::ipc::client_send_rust_bert_fraud_detec
 use rust_bert_fraud_detection_tools::build::classification::feature_importance;
 use rust_bert_fraud_detection_tools::build::create_naive_bayes_model;
 use rust_bert_fraud_detection_tools::build::data::{generate_shuffled_idx, split_vector};
-use rust_bert_fraud_detection_tools::build::classification::deep_learning::z_score_normalize;
+use rust_bert_fraud_detection_tools::build::classification::deep_learning::{get_new_nn, Predictor, z_score_normalize};
 
 pub const SENTENCES: [&str;6] = [
     "You!!! Lose up to 19% weight. Special promotion on our new weightloss.",
@@ -191,7 +191,11 @@ fn train_and_test_final_nn_model(eval: bool) -> anyhow::Result<()> {
 
     if !eval {
         let nn = rust_bert_fraud_detection_tools::build::classification::deep_learning::train_nn(&x_dataset,&y_dataset);
-        rust_bert_fraud_detection_tools::build::classification::deep_learning::test_nn(&&nn,&x_dataset,&y_dataset);
+        let path = std::path::Path::new("./NeuralNet.bin");
+        nn.save(path).unwrap();
+        let mut nn = get_new_nn(x_dataset[0].len() as i64);
+        nn.load(path).unwrap();
+        rust_bert_fraud_detection_tools::build::classification::deep_learning::test_nn(&nn,&x_dataset,&y_dataset);
     }else {
         let (x_train, x_test) = split_vector(&x_dataset, 0.8);
         let x_train = x_train.to_vec();
