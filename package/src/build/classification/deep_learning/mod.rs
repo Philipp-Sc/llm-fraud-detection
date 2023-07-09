@@ -73,7 +73,8 @@ impl Module for Predictor {
             .apply_t(&self.batch_norm4, true)
             .relu()
             .dropout(self.dropout_p, true)
-            .apply(&self.linear5);
+            .apply(&self.linear5)
+            .sigmoid();
         output
     }
 }
@@ -85,13 +86,13 @@ pub fn train_nn(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>) -> Predictor {
 
     let x_len = x_dataset[0].len() as i64;
     let inputs: Vec<Vec<f32>> = x_dataset.into_iter().map(|y| y.into_iter().map(|x| *x as f32).collect()).collect();
-    let targets: Vec<Vec<f32>> = y_dataset.into_iter().map(|x| vec![(if x > &1.0 {1.0}else if x < &0.0 {0.0}else if x.is_nan(){0.0}else{*x}) as f32] ).collect();
+    let targets: Vec<Vec<f32>> = y_dataset.into_iter().map(|x| vec![*x as f32] ).collect();
 
     let predictor = Predictor::new(&vs.root(), x_len);
     let mut optimizer = nn::Adam::default().build(&vs, 1e-3).unwrap();
     let mut rng = thread_rng();  // Initialize the random number generator
 
-    let batch_size = 500;  // Define the desired batch size
+    let batch_size = 256;  // Define the desired batch size
 
     let input_chunks = inputs.chunks(batch_size);
     let target_chunks = targets.chunks(batch_size);
@@ -109,16 +110,17 @@ pub fn train_nn(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>) -> Predictor {
             let target_tensor = Tensor::from_slice(&target_chunk.concat()).reshape(&[-1, targets[0].len() as i64]);
 
             let output = predictor.forward(&input_tensor);
-            let loss = output.mse_loss(&target_tensor, tch::Reduction::Mean);
+            //let loss = output.mse_loss(&target_tensor, tch::Reduction::Mean);
+            let loss = output.binary_cross_entropy::<Tensor>(&target_tensor, None, tch::Reduction::Mean);
+
             optimizer.zero_grad();
             loss.backward();
             optimizer.step();
             epoch_loss = loss.double_value(&[]);
         }
 
-        if epoch % 5 == 0 {
-            println!("Epoch: {:?}, Loss: {:?}", epoch, epoch_loss);
-        }
+        println!("Epoch: {:?}, Loss: {:?}", epoch, epoch_loss);
+
     }
     predictor
 }
