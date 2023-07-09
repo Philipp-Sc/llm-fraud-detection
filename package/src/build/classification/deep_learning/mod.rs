@@ -11,26 +11,58 @@ use std::path::Path;
 use importance::{importance, Opts};
 use importance::score::{Model, ScoreKind};
 
+use std::sync::{Arc, Mutex};
+use lazy_static::lazy_static;
+
+lazy_static! {
+        static ref PREDICTOR_POOL: Arc<Mutex<Vec<Arc<Mutex<Predictor>>>>> = {
+            let mut pool = Vec::new();
+            Arc::new(Mutex::new(pool))
+        };
+    }
+
 struct MockModel;
 
 impl Model for MockModel {
     fn predict(&self, x: &Vec<Vec<f64>>) -> Vec<f64> {
         let device = tch::Device::cuda_if_available();
         let x_len = x[0].len() as i64;
-        let predictor = get_model(x_len.clone()).unwrap();
-        let input_tensor = Tensor::from_slice(&x.into_iter().flatten().map(|x| *x as f32).collect::<Vec<f32>>()).reshape(&[-1, x_len ]).to_device(device);
 
-        let predictions: Vec<Vec<f32>> = predictor.forward(&input_tensor).try_into().unwrap();
+        let predictor = get_model(x_len.clone()).expect("Failed to get a predictor from the pool.");
+
+        let input_tensor = Tensor::from_slice(&x.into_iter().flatten().map(|x| *x as f32).collect::<Vec<f32>>())
+            .reshape(&[-1, x_len])
+            .to_device(device);
+
+        let predictions: Vec<Vec<f32>> = predictor.lock().unwrap().forward(&input_tensor).try_into().unwrap();
         let predictions = predictions.into_iter().flatten().map(|x| x as f64).collect::<Vec<f64>>();
         predictions
     }
 }
 
-fn get_model(x_len: i64) -> anyhow::Result<Predictor>{
-    let mut nn = get_new_nn(x_len);
-    let path = std::path::Path::new("./NeuralNet.bin");
-    nn.load(path)?;
-    Ok(nn)
+fn get_model(x_len: i64) -> anyhow::Result<Arc<Mutex<Predictor>>> {
+
+
+    let mut pool = PREDICTOR_POOL.lock().unwrap();
+
+    // Check if any predictor is available in the pool
+    if let Some(predictor) = pool.iter().find(|p| !p.try_lock().is_err()) {
+        return Ok(Arc::clone(predictor));
+    }
+
+    // If all predictors are in use, wait until one becomes available
+    while pool.len() >= 100 {
+        std::thread::sleep(std::time::Duration::from_millis(100));
+        if let Some(predictor) = pool.iter().find(|p| !p.try_lock().is_err()) {
+            return Ok(Arc::clone(predictor));
+        }
+    }
+
+    // Create a new predictor and add it to the pool
+    let new_predictor = Arc::new(Mutex::new(get_new_nn(x_len)));
+    pool.push(Arc::clone(&new_predictor));
+
+    Ok(new_predictor)
 }
 
 // Define your predictor model
