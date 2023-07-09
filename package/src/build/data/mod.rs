@@ -1,7 +1,7 @@
 use std::fs::File;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
-use crate::build::{language_model, sentiment};
+use crate::build::{language_model, OLD_FRAUD_INDICATORS, sentiment};
 
 const MIN_TEXT_LENGTH: usize = 20;
 
@@ -73,6 +73,10 @@ pub fn read_datasets_and_shuffle(paths: &[&str], shuffled_idx: &Vec<usize>) -> a
     }
 
     Ok(dataset_shuffled)
+}
+
+pub fn get_old_x_labels() -> Vec<String> {
+    vec![OLD_FRAUD_INDICATORS.to_vec().into_iter().map(|x| x.to_string()).collect::<Vec<String>>(),super::feature_engineering::get_labels(),vec!["Sentiment".to_string()]].into_iter().flatten().collect()
 }
 
 pub fn get_x_labels() -> Vec<String> {
