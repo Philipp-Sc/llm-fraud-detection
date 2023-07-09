@@ -4,6 +4,8 @@ use crate::build::classification::calculate_metrics;
 
 use rand::seq::SliceRandom;
 use rand::thread_rng;
+
+
 // Define your predictor model
 #[derive(Debug)]
 pub struct Predictor {
@@ -58,7 +60,7 @@ impl Predictor {
 
 impl Module for Predictor {
     fn forward(&self, input: &Tensor) -> Tensor {
-        let output = input
+        let output = input.sigmoid()
             .apply(&self.linear1)
             .apply_t(&self.batch_norm1, true)
             .relu()
@@ -91,7 +93,8 @@ pub fn train_nn(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>) -> Predictor {
     let targets: Vec<Vec<f32>> = y_dataset.into_iter().map(|x| vec![*x as f32] ).collect();
 
     let predictor = Predictor::new(&vs.root(), x_len);
-    let mut optimizer = nn::Adam::default().build(&vs, 1e-3).unwrap();
+    let mut optimizer = nn::Adam::default().build(&vs, 1e-4).unwrap();
+
     let mut rng = thread_rng();  // Initialize the random number generator
 
     let batch_size = 256;  // Define the desired batch size
@@ -99,7 +102,7 @@ pub fn train_nn(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>) -> Predictor {
     let input_chunks = inputs.chunks(batch_size);
     let target_chunks = targets.chunks(batch_size);
 
-    for epoch in 0..100 {
+    for epoch in 0..1000 {
         let mut epoch_loss = 0.0;
 
         let mut shuffled_chunks = input_chunks.clone().zip(target_chunks.clone()).collect::<Vec<_>>();
