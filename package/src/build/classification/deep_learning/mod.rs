@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use ndarray::{Array, Array1};
 use tch::{nn, nn::Module, nn::OptimizerConfig, Kind, Tensor, Device};
 use crate::build::classification::calculate_metrics;
@@ -7,6 +8,30 @@ use rand::thread_rng;
 
 use std::fs::File;
 use std::path::Path;
+use importance::{importance, Opts};
+use importance::score::{Model, ScoreKind};
+
+struct MockModel;
+
+impl Model for MockModel {
+    fn predict(&self, x: &Vec<Vec<f64>>) -> Vec<f64> {
+        let device = tch::Device::cuda_if_available();
+        let x_len = x[0].len() as i64;
+        let predictor = get_model(x_len.clone()).unwrap();
+        let input_tensor = Tensor::from_slice(&x.into_iter().flatten().map(|x| *x as f32).collect::<Vec<f32>>()).reshape(&[-1, x_len ]).to_device(device);
+
+        let predictions: Vec<Vec<f32>> = predictor.forward(&input_tensor).try_into().unwrap();
+        let predictions = predictions.into_iter().flatten().map(|x| x as f64).collect::<Vec<f64>>();
+        predictions
+    }
+}
+
+fn get_model(x_len: i64) -> anyhow::Result<Predictor>{
+    let mut nn = get_new_nn(x_len);
+    let path = std::path::Path::new("./NeuralNet.bin");
+    nn.load(path)?;
+    Ok(nn)
+}
 
 // Define your predictor model
 #[derive(Debug)]
@@ -297,6 +322,31 @@ fn calculate_mean_std_dev(x_dataset: &Vec<Vec<f64>>) -> (Vec<f64>, Vec<f64>) {
         .collect();
 
     (mean, std_dev)
+}
+
+pub fn feature_importance_nn(x_dataset_shuffled: &Vec<Vec<f64>>, y_dataset_shuffled: &Vec<f64>) -> anyhow::Result<()> {
+
+    let model = MockModel;
+
+    let opts = Opts {
+        verbose: true,
+        kind: Some(ScoreKind::Mae),
+        n: Some(100),
+        only_means: true,
+        scale: true,
+    };
+
+    let importances = importance(&model, x_dataset_shuffled.to_owned(), y_dataset_shuffled.to_owned(), opts);
+    println!("Importances: {:?}", importances);
+
+    let importances_means: Vec<f64> = importances.importances_means;
+    let mut result: Vec<(f64, String)> = importances_means.into_iter().zip(super::super::data::get_x_labels()).collect();
+    result.sort_by(|(a,_), (b,_)| b.partial_cmp(&a).unwrap_or(Ordering::Equal));
+
+    println!("Result: {:?}", result);
+
+    Ok(())
+
 }
 
 

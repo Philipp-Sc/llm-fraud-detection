@@ -7,7 +7,7 @@ use rust_bert_fraud_detection_socket_ipc::ipc::client_send_rust_bert_fraud_detec
 use rust_bert_fraud_detection_tools::build::classification::feature_importance;
 use rust_bert_fraud_detection_tools::build::create_naive_bayes_model;
 use rust_bert_fraud_detection_tools::build::data::{generate_shuffled_idx, split_vector};
-use rust_bert_fraud_detection_tools::build::classification::deep_learning::{get_new_nn, Predictor, z_score_normalize};
+use rust_bert_fraud_detection_tools::build::classification::deep_learning::{feature_importance_nn, get_new_nn, Predictor, z_score_normalize};
 
 pub const SENTENCES: [&str;6] = [
     "You!!! Lose up to 19% weight. Special promotion on our new weightloss.",
@@ -51,6 +51,8 @@ fn main() -> anyhow::Result<()> {
         "generate_feature_vectors" => {generate_feature_vectors();},
         "service" => {service();},
         "feature_selection" => {feature_selection();},
+        "feature_selection_nn" => {feature_selection_nn();},
+
         _ => {panic!()}
     }
 
@@ -155,6 +157,25 @@ fn feature_selection() -> anyhow::Result<()> {
 
 
     feature_importance(&x_dataset, &y_dataset)
+}
+
+fn feature_selection_nn() -> anyhow::Result<()> {
+    let data_paths = vec![
+        "youtubeSpamCollection",
+        "enronSpamSubset",
+        "lingSpam",
+        "smsspamcollection",
+        "completeSpamAssassin",
+        "governance_proposal_spam_likelihood"].into_iter().map(|x| format!("data_gen_v5_({}).json", x)).collect::<Vec<String>>();
+    let paths = data_paths.iter().map(|x| x.as_str()).collect::<Vec<&str>>();
+
+    let shuffled_idx = generate_shuffled_idx(&paths[..])?;
+
+    let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&paths[..], &shuffled_idx)?;
+    let (x_dataset, mean, std_dev) = z_score_normalize(&x_dataset, None);
+
+
+    feature_importance_nn(&x_dataset, &y_dataset)
 }
 
 
