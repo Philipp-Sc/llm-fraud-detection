@@ -8,6 +8,7 @@ use rust_bert_fraud_detection_tools::build::classification::feature_importance;
 use rust_bert_fraud_detection_tools::build::create_naive_bayes_model;
 use rust_bert_fraud_detection_tools::build::data::{generate_shuffled_idx, split_vector};
 use rust_bert_fraud_detection_tools::build::classification::deep_learning::{feature_importance_nn, get_new_nn, Predictor, z_score_normalize};
+use rust_bert_fraud_detection_tools::build::language_model::load_embeddings_from_file;
 
 pub const SENTENCES: [&str;6] = [
     "You!!! Lose up to 19% weight. Special promotion on our new weightloss.",
@@ -190,9 +191,11 @@ fn train_and_test_final_nn_model(eval: bool) -> anyhow::Result<()> {
         "governance_proposal_spam_likelihood"].into_iter().map(|x| format!("data_gen_v5_({}).json",x)).collect::<Vec<String>>();
     let paths = data_paths.iter().map(|x| x.as_str()).collect::<Vec<&str>>();
 
-    let shuffled_idx = generate_shuffled_idx(&paths[..])?;
+    //let shuffled_idx = generate_shuffled_idx(&paths[..])?;
+    //let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&paths[..],&shuffled_idx)?;
 
-    let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&paths[..],&shuffled_idx)?;
+    let (x_dataset, y_dataset) =  load_embeddings_from_file(&paths[..])?;
+
 
     let (x_dataset, mean, std_dev) = z_score_normalize(&x_dataset, None);
     // drop all features given a blacklist

@@ -367,6 +367,7 @@ pub fn create_training_data(dataset_paths: Vec<&str>,topics_output_path: &str) -
 
     sentiment::extract_sentiments(&dataset_view,Some(format!("sentiment_extract_sentiments_{}",topics_output_path)))?;
     language_model::extract_topics(&dataset_view,&FRAUD_INDICATORS,Some(format!("language_model_extract_topics_{}",topics_output_path)))?;
+    language_model::extract_embeddings(&dataset_view, Some(format!("language_model_extract_embeddings_{}",topics_output_path)))?;
 
     Ok(())
 }
