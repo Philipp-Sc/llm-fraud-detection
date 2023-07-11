@@ -40,12 +40,13 @@ pub fn get_features(text: &String, topic_predictions: Vec<f64>, sentiment_predic
     let mut features = Vec::new();
 
     if topics {
+        // Topics
         features.append(&mut topic_predictions.clone());
+        // Sentiment
+        features.push(sentiment_prediction);
     }
     let mut custom_feature_vec = get_custom_features(text);
     if latent_variables {
-        // Sentiment
-        features.push(sentiment_prediction);
         // Naive Bayes
         features.push(super::naive_bayes::categorical_nb_model_predict(vec![text.clone()]).unwrap()[0] as f64);
         features.push(super::naive_bayes::gaussian_nb_model_predict(vec![text.clone()]).unwrap()[0] as f64);
