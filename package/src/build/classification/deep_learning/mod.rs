@@ -264,12 +264,12 @@ pub fn train_nn(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>) -> Predictor {
 
     let mut rng = thread_rng();  // Initialize the random number generator
 
-    let batch_size = 512;//256;  // Define the desired batch size
+    let batch_size = 256;//256;  // Define the desired batch size
 
     let input_chunks = inputs.chunks(batch_size);
     let target_chunks = targets.chunks(batch_size);
 
-    for epoch in 0..1000 {
+    for epoch in 0..2000 {
         let mut epoch_loss = 0.0;
 
         let mut shuffled_chunks = input_chunks.clone().zip(target_chunks.clone()).collect::<Vec<_>>();

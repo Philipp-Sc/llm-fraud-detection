@@ -1,10 +1,11 @@
+use std::collections::HashSet;
 use importance::score::Model;
 use words_count::WordsCount;
 use crate::build::classification::deep_learning::MockModel;
+use linkify::LinkFinder;
+
 
 lazy_static::lazy_static! {
-
-        static ref RE_URL: regex::Regex = regex::Regex::new(r"(http|https|www)").unwrap();
 
         static ref RE_UPPER_CASE_WORD: regex::Regex = regex::Regex::new(r"\b[A-Z]+\b").unwrap();
         
@@ -13,6 +14,9 @@ lazy_static::lazy_static! {
         static ref RE_PUNCTUATION: regex::Regex = regex::Regex::new(r"[[:punct:]]+").unwrap();
 
         static ref RE_EMOJI: regex::Regex = regex::Regex::new(r"\p{Emoji}").unwrap();
+
+        static ref LINK_FINDER: LinkFinder = get_link_finder();
+
      }
 
 pub fn get_hard_coded_feature_labels() -> Vec<String> {
@@ -38,6 +42,7 @@ pub fn get_features(text: &String, topic_predictions: Vec<f64>, sentiment_predic
     if topics {
         features.append(&mut topic_predictions.clone());
     }
+    let mut custom_feature_vec = get_custom_features(text);
     if latent_variables {
         // Sentiment
         features.push(sentiment_prediction);
@@ -49,25 +54,56 @@ pub fn get_features(text: &String, topic_predictions: Vec<f64>, sentiment_predic
         //features.append(&mut model.predict(&vec![topic_predictions.clone()]));
         // NN
         //let model = MockModel{ label: "./NeuralNetCustomFeatures.bin".to_string()};
-        //features.append(&mut model.predict(&vec![topic_predictions.clone()]));
+        //features.append(&mut model.predict(&vec![custom_feature_vec.clone()]));
         // RandomForest
         // ...
 
     }
 
     if custom_features {
-        let word_count = words_count::count(text);
-        features.push(word_count.words as f64); // 8
-        features.push(word_count.characters as f64); // 3
-        features.push(word_count.whitespaces as f64); // 5
-        features.push(word_count.cjk as f64);
-
-        features.push(RE_URL.captures_iter(&text.to_lowercase()).count() as f64); // 9
-        features.push(RE_UPPER_CASE_WORD.captures_iter(text).count() as f64);
-        features.push(RE_NON_STANDARD.captures_iter(text).count() as f64); // 7
-        features.push(RE_PUNCTUATION.captures_iter(text).count() as f64); // 4
-        features.push(RE_EMOJI.captures_iter(text).count() as f64); // 6
+        features.append(&mut custom_feature_vec);
     }
 
     features
+}
+
+fn get_custom_features(text: &String) -> Vec<f64> {
+    let mut features = Vec::new();
+    let word_count = words_count::count(text);
+    features.push(word_count.words as f64); // 8
+    features.push(word_count.characters as f64); // 3
+    features.push(word_count.whitespaces as f64); // 5
+    features.push(word_count.cjk as f64);
+
+    features.push(extract_links(text).into_iter().count() as f64); // 9
+    features.push(RE_UPPER_CASE_WORD.captures_iter(text).count() as f64);
+    features.push(RE_NON_STANDARD.captures_iter(text).count() as f64); // 7
+    features.push(RE_PUNCTUATION.captures_iter(text).count() as f64); // 4
+    features.push(RE_EMOJI.captures_iter(text).count() as f64); // 6
+
+    features
+}
+
+
+fn extract_links(text: &String) -> Vec<String> {
+
+    let links = LINK_FINDER.links(&text);
+    let mut output: Vec<String> = Vec::new();
+    for link in links  {
+        if let s = link.as_str().to_string() {
+            if s.parse::<f64>().is_err() && s.chars().count() >= 8 && s.chars().any(|c| c.is_alphabetic()) {
+                output.push(s);
+            }
+        }
+    }
+    // Convert the vector to a HashSet
+    let set: HashSet<String> = output.into_iter().collect();
+    // Convert the HashSet back to a vector
+    set.into_iter().collect()
+}
+
+fn get_link_finder() -> LinkFinder {
+    let mut finder = LinkFinder::new();
+    finder.url_must_have_scheme(false);
+    finder
 }
