@@ -77,7 +77,7 @@ pub fn read_datasets_and_shuffle(paths: &[&str], shuffled_idx: &Vec<usize>) -> a
 }
 
 
-pub fn create_dataset(paths: &[&str], shuffled_idx: &Vec<usize>, hard_coded_features: bool, topics: &Vec<String>, sentiment: bool, nn_prediction: bool) -> anyhow::Result<(Vec<Vec<f64>>,Vec<f64>)> {
+pub fn create_dataset(paths: &[&str], shuffled_idx: &Vec<usize>, hard_coded_features: bool, topics: &Vec<String>, sentiment: bool, nn_predictions_using_topics: &Vec<String>) -> anyhow::Result<(Vec<Vec<f64>>,Vec<f64>)> {
 
     let (text_dataset, y_dataset) = sentiment::load_texts_from_file(paths)?;
     assert_eq!(shuffled_idx.len(),text_dataset.len());
@@ -125,6 +125,9 @@ pub fn create_dataset(paths: &[&str], shuffled_idx: &Vec<usize>, hard_coded_feat
         y_dataset_shuffled.push(y_dataset[i].clone());
     }
 
+    for nn_path in nn_predictions_using_topics {
+
+    }
     //let model = MockModel;
     //model.predict(x_dataset_shuffled);
 

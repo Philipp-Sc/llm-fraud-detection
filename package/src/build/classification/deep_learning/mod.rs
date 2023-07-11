@@ -15,20 +15,22 @@ use std::sync::{Arc, Mutex};
 use lazy_static::lazy_static;
 
 lazy_static! {
-        static ref PREDICTOR_POOL: Arc<Mutex<Vec<Arc<Mutex<Predictor>>>>> = {
+        static ref PREDICTOR_POOL: Arc<Mutex<Vec<(String,Arc<Mutex<Predictor>>)>>> = {
             let mut pool = Vec::new();
             Arc::new(Mutex::new(pool))
         };
     }
 
-struct MockModel;
+struct MockModel {
+    pub label: String
+}
 
 impl Model for MockModel {
     fn predict(&self, x: &Vec<Vec<f64>>) -> Vec<f64> {
         let device = tch::Device::cuda_if_available();
         let x_len = x[0].len() as i64;
 
-        let predictor = get_model(x_len.clone()).expect("Failed to get a predictor from the pool.");
+        let predictor = get_model(x_len.clone(),&self.label).expect("Failed to get a predictor from the pool.");
 
         let input_tensor = Tensor::from_slice(&x.into_iter().flatten().map(|x| *x as f32).collect::<Vec<f32>>())
             .reshape(&[-1, x_len])
@@ -40,27 +42,30 @@ impl Model for MockModel {
     }
 }
 
-fn get_model(x_len: i64) -> anyhow::Result<Arc<Mutex<Predictor>>> {
+fn get_model(x_len: i64, label: &String) -> anyhow::Result<Arc<Mutex<Predictor>>> {
 
 
     let mut pool = PREDICTOR_POOL.lock().unwrap();
 
     // Check if any predictor is available in the pool
-    if let Some(predictor) = pool.iter().find(|p| !p.try_lock().is_err()) {
+    if let Some((_,predictor)) = pool.iter().find(|(l,p)| l==label && !p.try_lock().is_err()) {
         return Ok(Arc::clone(predictor));
     }
 
     // If all predictors are in use, wait until one becomes available
-    while pool.len() >= 100 {
+    while pool.len() >= 500 {
         std::thread::sleep(std::time::Duration::from_millis(100));
-        if let Some(predictor) = pool.iter().find(|p| !p.try_lock().is_err()) {
+        if let Some((_,predictor)) = pool.iter().find(|(l,p)| l==label && !p.try_lock().is_err()) {
             return Ok(Arc::clone(predictor));
         }
     }
 
     // Create a new predictor and add it to the pool
-    let new_predictor = Arc::new(Mutex::new(get_new_nn(x_len)));
-    pool.push(Arc::clone(&new_predictor));
+    let mut model = get_new_nn(x_len);
+    let path = std::path::Path::new("./NeuralNet.bin");
+    model.load(path).unwrap();
+    let new_predictor = Arc::new(Mutex::new(model));
+    pool.push((label.to_owned(),Arc::clone(&new_predictor)));
 
     Ok(new_predictor)
 }
@@ -360,7 +365,7 @@ fn calculate_mean_std_dev(x_dataset: &Vec<Vec<f64>>) -> (Vec<f64>, Vec<f64>) {
 
 pub fn feature_importance_nn(x_dataset_shuffled: &Vec<Vec<f64>>, y_dataset_shuffled: &Vec<f64>, feature_labels: Vec<String>) -> anyhow::Result<()> {
 
-    let model = MockModel;
+    let model = MockModel{ label: "./NeuralNet.bin".to_string()};
 
     let opts = Opts {
         verbose: true,
