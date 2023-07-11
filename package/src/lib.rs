@@ -6,12 +6,15 @@ pub mod service;
 use importance::score::Model;
 use crate::build::classification::deep_learning::MockModel;
 use crate::build::feature_engineering::get_features;
+use crate::build::language_model::get_n_best_fraud_indicators;
 
 pub fn fraud_probabilities(texts: &[&str]/*, topics: &[&str]*/) ->  anyhow::Result<Vec<f64>> {
 
+    let topics = get_n_best_fraud_indicators(30usize,&"feature_importance_random_forest_topics_only.json".to_string());
+    let topics_str = topics.iter().map(|x| x.as_str()).collect::<Vec<&str>>();
 
 
-    let mut topic_predictions: Vec<Vec<f64>> = build::language_model::get_topic_predictions(texts,&build::FRAUD_INDICATORS)?;
+    let mut topic_predictions: Vec<Vec<f64>> = build::language_model::get_topic_predictions(texts,&topics_str[..])?;
     let sentiment_predictions = build::sentiment::get_sentiments(texts);
 
 
