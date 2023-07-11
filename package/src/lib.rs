@@ -40,7 +40,7 @@ pub fn fraud_probabilities(texts: &[&str]/*, topics: &[&str]*/) ->  anyhow::Resu
 
 
 
-    build::classification::predict(&topic_predictions)
+    build::classification::predict(&input)
 }
 
 
