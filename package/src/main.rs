@@ -190,8 +190,8 @@ fn train_and_test_final_model(eval: bool, model: String) -> anyhow::Result<()> {
     let shuffled_idx = generate_shuffled_idx(&JSON_DATASET)?;
 
     //let topics = get_fraud_indicators(true);
-    //let topics = get_n_best_fraud_indicators(30 as usize,&"feature_importance_random_forest_topics_only.json".to_string());
-    let topics = get_n_best_fraud_indicators(30usize,&"feature_importance_nn_topics_only.json".to_string());
+    let topics = get_n_best_fraud_indicators(35usize,&"feature_importance_random_forest_topics_only.json".to_string());
+    //let topics = get_n_best_fraud_indicators(35usize,&"feature_importance_nn_topics_only.json".to_string());
 
     let nn_predictions_using_topics: Vec<String> = vec![];
     let (mut x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&JSON_DATASET,&shuffled_idx,false,&topics,false,&nn_predictions_using_topics)?;
