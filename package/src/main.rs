@@ -9,7 +9,7 @@ use rust_bert_fraud_detection_tools::build::create_naive_bayes_model;
 use rust_bert_fraud_detection_tools::build::data::{generate_shuffled_idx, split_vector};
 use rust_bert_fraud_detection_tools::build::classification::deep_learning::{feature_importance_nn, get_new_nn, Predictor, z_score_normalize};
 use rust_bert_fraud_detection_tools::build::feature_engineering::get_hard_coded_feature_labels;
-use rust_bert_fraud_detection_tools::build::language_model::{get_fraud_indicators, load_embeddings_from_file};
+use rust_bert_fraud_detection_tools::build::language_model::{get_fraud_indicators, get_n_best_fraud_indicators, load_embeddings_from_file};
 
 
 const JSON_DATASET: [&str;6] = [
@@ -185,7 +185,8 @@ fn train_and_test_final_model(eval: bool, model: String) -> anyhow::Result<()> {
 
     let shuffled_idx = generate_shuffled_idx(&JSON_DATASET)?;
 
-    let topics = get_fraud_indicators(true);
+    //let topics = get_fraud_indicators(true);
+    let topics = get_n_best_fraud_indicators(30 as usize);
 
     let (mut x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&JSON_DATASET,&shuffled_idx,false,&topics,false,false)?;
 
@@ -222,6 +223,7 @@ fn train_and_test_final_model(eval: bool, model: String) -> anyhow::Result<()> {
         match model.as_str() {
             "random_forest" => {
                 rust_bert_fraud_detection_tools::build::create_classification_model(&x_train, &y_train)?;
+                rust_bert_fraud_detection_tools::build::test_classification_model(&x_train, &y_train)?;
                 rust_bert_fraud_detection_tools::build::test_classification_model(&x_test, &y_test)?;
             },
             "nn" => {

@@ -6,7 +6,7 @@ use crate::build::feature_engineering::get_features;
 
 use std::sync::Arc;
 use std::sync::Mutex;
-use crate::build::{ALL_FRAUD_INDICATORS, FRAUD_INDICATORS};
+use crate::build::{ALL_FRAUD_INDICATORS, ALL_FRAUD_INDICATORS_SORTED, FRAUD_INDICATORS};
 use rust_bert::pipelines::sentence_embeddings::{SentenceEmbeddingsModel, SentenceEmbeddingsModelType};
 use rust_bert::pipelines::sentence_embeddings::SentenceEmbeddingsBuilder;
 
@@ -22,6 +22,10 @@ lazy_static::lazy_static! {
         ));
 
     }
+
+pub fn get_n_best_fraud_indicators(n: usize) -> Vec<String> {
+    ALL_FRAUD_INDICATORS_SORTED.into_iter().take(n).map(|x| x.to_string()).collect()
+}
 
 pub fn get_fraud_indicators(all: bool) -> Vec<String> {
     if all {
