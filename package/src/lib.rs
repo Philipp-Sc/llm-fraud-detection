@@ -10,30 +10,26 @@ use crate::build::language_model::get_n_best_fraud_indicators;
 
 pub fn fraud_probabilities(texts: &[&str]/*, topics: &[&str]*/) ->  anyhow::Result<Vec<f64>> {
 
-    let topics = get_n_best_fraud_indicators(30usize,&"feature_importance_random_forest_topics_only.json".to_string());
-    let topics_str = topics.iter().map(|x| x.as_str()).collect::<Vec<&str>>();
+    let (custom_features, topics, latent_variables) = (false, false, true);
+
+    let topic_selection = get_n_best_fraud_indicators(30usize,&"feature_importance_random_forest_topics_only.json".to_string());
+    let topics_str = topic_selection.iter().map(|x| x.as_str()).collect::<Vec<&str>>();
 
 
-    let mut topic_predictions: Vec<Vec<f64>> = build::language_model::get_topic_predictions(texts,&topics_str[..])?;
-    let sentiment_predictions = build::sentiment::get_sentiments(texts);
+    let topics_dataset: Vec<Vec<f64>> = build::language_model::get_topic_predictions(texts,&topics_str[..])?;
+    assert_eq!(texts.len(), topics_dataset.len());
+    let sentiment_dataset = build::sentiment::get_sentiments(texts);
+    assert_eq!(topics_dataset.len(), sentiment_dataset.len());
 
 
     let mut input: Vec<Vec<f64>> = Vec::with_capacity(texts.len());
 
     for i in 0..texts.len() {
-        let mut tmp = Vec::new();
 
         let text = texts[i].to_owned();
-        tmp.append(&mut get_features(&text));
 
-        let model = MockModel{ label: "./NeuralNet.bin".to_string()};
-        let prediction: f64 = model.predict(&vec![topic_predictions[i].clone()])[0];
-
-        tmp.append(&mut topic_predictions[i]);
-        tmp.push(prediction);
-
-        tmp.push(sentiment_predictions[i]);
-
+        let mut tmp = Vec::new();
+        tmp.append(&mut get_features(&text, topics_dataset[i].clone(), sentiment_dataset[i].clone(), custom_features, topics, latent_variables));
         input.push(tmp);
 
     }

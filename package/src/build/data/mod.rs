@@ -79,52 +79,25 @@ pub fn read_datasets_and_shuffle(paths: &[&str], shuffled_idx: &Vec<usize>) -> a
 }
 
 
-pub fn create_dataset(paths: &[&str], shuffled_idx: &Vec<usize>, hard_coded_features: bool, topics: &Vec<String>, sentiment: bool, nn_predictions_using_topics: &Vec<String>) -> anyhow::Result<(Vec<Vec<f64>>,Vec<f64>)> {
+pub fn create_dataset(paths: &[&str], shuffled_idx: &Vec<usize>, topic_selection: &Vec<String>, custom_features: bool, topics: bool, latent_variables: bool) -> anyhow::Result<(Vec<Vec<f64>>,Vec<f64>)> {
 
     let (text_dataset, y_dataset) = sentiment::load_texts_from_file(paths)?;
     assert_eq!(shuffled_idx.len(),text_dataset.len());
 
+    let (topics_dataset, y_data): (Vec<Vec<f64>>, Vec<f64>) = language_model::load_topics_from_file(paths, topic_selection)?;
+    assert_eq!(text_dataset.len(), topics_dataset.len());
+    assert_eq!(y_dataset, y_data);
+    let (sentiment_dataset, y_data): (Vec<f64>, Vec<f64>) = sentiment::load_sentiments_from_file(paths)?;
+    assert_eq!(topics_dataset.len(), sentiment_dataset.len());
+    assert_eq!(y_dataset, y_data);
+
+
     let mut x_dataset: Vec<Vec<f64>> = Vec::with_capacity(text_dataset.len());
     for i in 0..text_dataset.len(){
         let mut tmp = Vec::new();
-        if hard_coded_features {
-            tmp.append(&mut get_features(&text_dataset[i]));
-        }
+        tmp.append(&mut get_features(&text_dataset[i].clone(), topics_dataset[i].clone(), sentiment_dataset[i].clone(), custom_features, topics, latent_variables));
         x_dataset.push(tmp);
     }
-
-    if !topics.is_empty() {
-        let (mut dataset, y_data): (Vec<Vec<f64>>, Vec<f64>) = language_model::load_topics_from_file(paths, topics)?;
-        assert_eq!(x_dataset.len(), dataset.len());
-        assert_eq!(y_dataset, y_data);
-
-        let mut nn_predictions: Vec<Vec<f64>> = Vec::with_capacity(dataset.len());
-        for _ in 0..dataset.len(){
-            nn_predictions.push(Vec::new());
-        }
-
-        for nn_path in nn_predictions_using_topics {
-            let model = MockModel{ label: nn_path.to_string()};
-            let predictions = model.predict(&dataset);
-            for i in 0..predictions.len(){
-                nn_predictions[i].push(predictions[i]);
-            }
-        }
-
-        for i in 0..text_dataset.len(){
-            x_dataset[i].append(&mut dataset[i]);
-            x_dataset[i].append(&mut nn_predictions[i]);
-        }
-    }
-    if sentiment {
-        let (mut dataset, y_data): (Vec<f64>, Vec<f64>) = sentiment::load_sentiments_from_file(paths)?;
-        assert_eq!(x_dataset.len(), dataset.len());
-        assert_eq!(y_dataset, y_data);
-
-        for i in 0..text_dataset.len(){
-            x_dataset[i].push(dataset[i]);
-        }
-    };
 
     // create an index array
     //let mut idx: Vec<usize> = (0..x_dataset.len()).collect();

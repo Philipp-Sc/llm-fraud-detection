@@ -40,6 +40,14 @@ pub const SENTENCES: [&str;6] = [
     ];
 
 
+// nn using topics
+// nn using hard_coded features
+
+// random forest with all features
+// nn with all features
+
+// linear regression or random forest of the above two models. potentially remove naive bayes from models and add to regression.
+
 // 1) generate_feature_vectors
 // 2) train_and_test_final_model
 // 3) feature_selection
@@ -131,10 +139,9 @@ fn naive_bayes_train_and_train_and_test_final_regression_model() -> anyhow::Resu
 
     create_naive_bayes_model(&train_dataset,&test_dataset)?;
 
-    let topics = get_fraud_indicators(false);
+    let topic_selection = get_fraud_indicators(false);
 
-    let nn_predictions_using_topics: Vec<String> = vec![];
-    let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&JSON_DATASET,&shuffled_idx, true,&topics,true,&nn_predictions_using_topics)?;
+    let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&JSON_DATASET,&shuffled_idx, &topic_selection, false,false,false)?;
 
     let (x_train, x_test) = split_vector(&x_dataset,0.8);
     let x_train = x_train.to_vec();
@@ -157,16 +164,14 @@ fn naive_bayes_train_and_train_and_test_final_regression_model() -> anyhow::Resu
 fn feature_selection(model: String) -> anyhow::Result<()> {
 
     let shuffled_idx = generate_shuffled_idx(&JSON_DATASET)?;
-    let topics = get_fraud_indicators(true);
+    let topic_selection = get_fraud_indicators(true);
 
-    let nn_predictions_using_topics: Vec<String> = vec![];
-
-    let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&JSON_DATASET, &shuffled_idx, false,&topics,false,&nn_predictions_using_topics)?;
+    let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&JSON_DATASET,&shuffled_idx, &topic_selection, false,false,false)?;
 
     //let hard_coded_feature_labels = get_hard_coded_feature_labels();
     //let sentiment = "Sentiment".to_string();
 
-    let feature_labels: Vec<String> = vec![/*hard_coded_feature_labels,*/topics/*,sentiment*/].into_iter().flatten().collect();
+    let feature_labels: Vec<String> = vec![/*hard_coded_feature_labels,*/topic_selection/*,sentiment*/].into_iter().flatten().collect();
 
     match model.as_str() {
         "random_forest" => {
@@ -190,11 +195,10 @@ fn train_and_test_final_model(eval: bool, model: String) -> anyhow::Result<()> {
     let shuffled_idx = generate_shuffled_idx(&JSON_DATASET)?;
 
     //let topics = get_fraud_indicators(true);
-    let topics = get_n_best_fraud_indicators(30usize,&"feature_importance_random_forest_topics_only.json".to_string());
+    let topic_selection = get_n_best_fraud_indicators(30usize,&"feature_importance_random_forest_topics_only.json".to_string());
     //let topics = get_n_best_fraud_indicators(30usize,&"feature_importance_nn_topics_only.json".to_string());
 
-    let nn_predictions_using_topics: Vec<String> = vec!["./NeuralNet.bin".to_string()];
-    let (mut x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&JSON_DATASET,&shuffled_idx,false,&topics,false,&nn_predictions_using_topics)?;
+    let (mut x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&JSON_DATASET,&shuffled_idx, &topic_selection, true,false,false)?;
 
     if model.as_str() == "nn" {
         let (z_dataset, mean, std_dev) = z_score_normalize(&x_dataset, None);
