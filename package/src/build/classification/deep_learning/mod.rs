@@ -21,7 +21,7 @@ lazy_static! {
         };
     }
 
-struct MockModel {
+pub struct MockModel {
     pub label: String
 }
 

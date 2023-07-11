@@ -3,6 +3,8 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 use crate::build::{language_model, sentiment};
 use crate::build::feature_engineering::get_features;
+use crate::build::classification::deep_learning::MockModel;
+use importance::score::Model;
 
 const MIN_TEXT_LENGTH: usize = 20;
 
@@ -96,8 +98,22 @@ pub fn create_dataset(paths: &[&str], shuffled_idx: &Vec<usize>, hard_coded_feat
         assert_eq!(x_dataset.len(), dataset.len());
         assert_eq!(y_dataset, y_data);
 
+        let mut nn_predictions: Vec<Vec<f64>> = Vec::with_capacity(dataset.len());
+        for _ in 0..dataset.len(){
+            nn_predictions.push(Vec::new());
+        }
+
+        for nn_path in nn_predictions_using_topics {
+            let model = MockModel{ label: nn_path.to_string()};
+            let predictions = model.predict(&dataset);
+            for i in 0..predictions.len(){
+                nn_predictions[i].push(predictions[i]);
+            }
+        }
+
         for i in 0..text_dataset.len(){
             x_dataset[i].append(&mut dataset[i]);
+            x_dataset[i].append(&mut nn_predictions[i]);
         }
     }
     if sentiment {
@@ -124,13 +140,6 @@ pub fn create_dataset(paths: &[&str], shuffled_idx: &Vec<usize>, hard_coded_feat
         x_dataset_shuffled.push(x_dataset[i].clone());
         y_dataset_shuffled.push(y_dataset[i].clone());
     }
-
-    for nn_path in nn_predictions_using_topics {
-
-    }
-    //let model = MockModel;
-    //model.predict(x_dataset_shuffled);
-
 
     Ok((x_dataset_shuffled, y_dataset_shuffled))
 }
