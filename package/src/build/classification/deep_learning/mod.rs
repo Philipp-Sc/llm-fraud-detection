@@ -13,8 +13,6 @@ use importance::score::{Model, ScoreKind};
 
 use std::sync::{Arc, Mutex};
 use lazy_static::lazy_static;
-use crate::build::data::get_old_x_labels;
-use crate::build::OLD_FRAUD_INDICATORS;
 
 lazy_static! {
         static ref PREDICTOR_POOL: Arc<Mutex<Vec<Arc<Mutex<Predictor>>>>> = {
@@ -358,14 +356,16 @@ fn calculate_mean_std_dev(x_dataset: &Vec<Vec<f64>>) -> (Vec<f64>, Vec<f64>) {
     (mean, std_dev)
 }
 
-pub fn feature_importance_nn(x_dataset_shuffled: &Vec<Vec<f64>>, y_dataset_shuffled: &Vec<f64>) -> anyhow::Result<()> {
+
+
+pub fn feature_importance_nn(x_dataset_shuffled: &Vec<Vec<f64>>, y_dataset_shuffled: &Vec<f64>, feature_labels: Vec<String>) -> anyhow::Result<()> {
 
     let model = MockModel;
 
     let opts = Opts {
         verbose: true,
         kind: Some(ScoreKind::Mae),
-        n: Some(1000),
+        n: Some(500),
         only_means: true,
         scale: true,
     };
@@ -374,10 +374,12 @@ pub fn feature_importance_nn(x_dataset_shuffled: &Vec<Vec<f64>>, y_dataset_shuff
     println!("Importances: {:?}", importances);
 
     let importances_means: Vec<f64> = importances.importances_means;
-    let mut result: Vec<(f64, String)> = importances_means.into_iter().zip(get_old_x_labels()).collect();
+    let mut result: Vec<(f64, String)> = importances_means.into_iter().zip(feature_labels).collect();
     result.sort_by(|(a,_), (b,_)| b.partial_cmp(&a).unwrap_or(Ordering::Equal));
 
-    println!("Result: {:?}", result);
+    let json_string = serde_json::json!({"feature_importance": &result}).to_string();
+
+    println!("Result: \n\n{:?}", json_string);
 
     Ok(())
 

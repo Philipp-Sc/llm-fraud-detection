@@ -1,7 +1,8 @@
 use std::fs::File;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
-use crate::build::{language_model, OLD_FRAUD_INDICATORS, sentiment};
+use crate::build::{language_model, sentiment};
+use crate::build::feature_engineering::get_features;
 
 const MIN_TEXT_LENGTH: usize = 20;
 
@@ -75,25 +76,39 @@ pub fn read_datasets_and_shuffle(paths: &[&str], shuffled_idx: &Vec<usize>) -> a
     Ok(dataset_shuffled)
 }
 
-pub fn get_old_x_labels() -> Vec<String> {
-    vec![OLD_FRAUD_INDICATORS.to_vec().into_iter().map(|x| x.to_string()).collect::<Vec<String>>(),super::feature_engineering::get_labels(),vec!["Sentiment".to_string()]].into_iter().flatten().collect()
-}
 
-pub fn get_x_labels() -> Vec<String> {
-    vec![super::language_model::get_labels(),super::feature_engineering::get_labels(),vec!["Sentiment".to_string()]].into_iter().flatten().collect()
-}
+pub fn create_dataset(paths: &[&str], shuffled_idx: &Vec<usize>, hard_coded_features: bool, topics: &Vec<String>, sentiment: bool, nn_prediction: bool) -> anyhow::Result<(Vec<Vec<f64>>,Vec<f64>)> {
 
-pub fn create_dataset(paths: &[&str], shuffled_idx: &Vec<usize>) -> anyhow::Result<(Vec<Vec<f64>>,Vec<f64>)> {
+    let (text_dataset, y_dataset) = sentiment::load_texts_from_file(paths)?;
+    assert_eq!(shuffled_idx.len(),text_dataset.len());
 
-
-    let (mut x_dataset, y_dataset): (Vec<Vec<f64>>, Vec<f64>) = language_model::load_topics_from_file_and_add_hard_coded_features(paths)?;
-    let (x_dataset_sentiment, _) = sentiment::load_sentiments_from_file(paths)?;
-
-    assert_eq!(x_dataset.len(), x_dataset_sentiment.len());
-    for i in 0..x_dataset.len() {
-        x_dataset[i].push(x_dataset_sentiment[i]);
+    let mut x_dataset: Vec<Vec<f64>> = Vec::with_capacity(text_dataset.len());
+    for i in 0..text_dataset.len(){
+        let mut tmp = Vec::new();
+        if hard_coded_features {
+            tmp.append(&mut get_features(&text_dataset[i]));
+        }
+        x_dataset.push(tmp);
     }
-    assert_eq!(shuffled_idx.len(),x_dataset.len());
+
+    if !topics.is_empty() {
+        let (mut dataset, y_data): (Vec<Vec<f64>>, Vec<f64>) = language_model::load_topics_from_file(paths, topics)?;
+        assert_eq!(x_dataset.len(), dataset.len());
+        assert_eq!(y_dataset, y_data);
+
+        for i in 0..text_dataset.len(){
+            x_dataset[i].append(&mut dataset[i]);
+        }
+    }
+    if sentiment {
+        let (mut dataset, y_data): (Vec<f64>, Vec<f64>) = sentiment::load_sentiments_from_file(paths)?;
+        assert_eq!(x_dataset.len(), dataset.len());
+        assert_eq!(y_dataset, y_data);
+
+        for i in 0..text_dataset.len(){
+            x_dataset[i].push(dataset[i]);
+        }
+    };
 
     // create an index array
     //let mut idx: Vec<usize> = (0..x_dataset.len()).collect();
@@ -109,6 +124,10 @@ pub fn create_dataset(paths: &[&str], shuffled_idx: &Vec<usize>) -> anyhow::Resu
         x_dataset_shuffled.push(x_dataset[i].clone());
         y_dataset_shuffled.push(y_dataset[i].clone());
     }
+
+    //let model = MockModel;
+    //model.predict(x_dataset_shuffled);
+
 
     Ok((x_dataset_shuffled, y_dataset_shuffled))
 }

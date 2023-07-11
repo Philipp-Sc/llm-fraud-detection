@@ -6,7 +6,7 @@ use crate::build::feature_engineering::get_features;
 
 use std::sync::Arc;
 use std::sync::Mutex;
-use crate::build::FRAUD_INDICATORS;
+use crate::build::{ALL_FRAUD_INDICATORS, FRAUD_INDICATORS};
 use rust_bert::pipelines::sentence_embeddings::{SentenceEmbeddingsModel, SentenceEmbeddingsModelType};
 use rust_bert::pipelines::sentence_embeddings::SentenceEmbeddingsBuilder;
 
@@ -23,8 +23,12 @@ lazy_static::lazy_static! {
 
     }
 
-pub fn get_labels() -> Vec<String> {
-    FRAUD_INDICATORS.into_iter().map(|x| x.to_string()).collect()
+pub fn get_fraud_indicators(all: bool) -> Vec<String> {
+    if all {
+        ALL_FRAUD_INDICATORS.into_iter().map(|x| x.to_string()).collect()
+    }else {
+        FRAUD_INDICATORS.into_iter().map(|x| x.to_string()).collect()
+    }
 }
 
 pub fn get_topic_predictions(batch: &[&str], topics: &[&str])  -> anyhow::Result<Vec<Vec<f64>>> {
@@ -158,7 +162,7 @@ pub fn extract_embeddings(dataset: &Vec<(&str,&f64)>, path: Option<String>) -> a
 // from each file, creates a dataset by combining the predicted values and labels,
 // and returns a tuple containing the dataset and the corresponding labels.
 
-pub fn load_topics_from_file_and_add_hard_coded_features(paths: &[&str]) -> anyhow::Result<(Vec<Vec<f64>>, Vec<f64>)> {
+pub fn load_topics_from_file(paths: &[&str], topics: &Vec<String>) -> anyhow::Result<(Vec<Vec<f64>>, Vec<f64>)> {
 
     // Initialize an empty vector to store the predicted values for each path.
     let mut list_sequence_classification_multi_label_prediction: Vec<serde_json::Value> = Vec::new();
@@ -198,14 +202,23 @@ pub fn load_topics_from_file_and_add_hard_coded_features(paths: &[&str]) -> anyh
         list_sequence_classification_multi_label_prediction.push(sequence_classification_multi_label_prediction);
     }
 
+
     let (x_dataset, y_dataset): (Vec<Vec<f64>>, Vec<f64>) = list_sequence_classification_multi_label_prediction
         .iter()
         .flat_map(|sequence_classification_multi_label_prediction| {
+            let available_topics =  sequence_classification_multi_label_prediction["topics"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|topic| topic.as_str().unwrap().to_string())
+                .map(|topic| topics.iter().any(|s| s == &topic))
+                .collect::<Vec<bool>>();
+
             sequence_classification_multi_label_prediction["predictions"]
                 .as_array()
                 .unwrap()
                 .iter()
-                .map(|topics| topics.as_array().unwrap().into_iter().map(|x| x.as_f64().unwrap()).collect::<Vec<f64>>())
+                .map(move |topic_val| topic_val.as_array().unwrap().into_iter().map(|x| x.as_f64().unwrap()).enumerate().filter_map(|(i,t)| if available_topics[i] {Some(t)}else{None}).collect::<Vec<f64>>())
                 .zip(
                     sequence_classification_multi_label_prediction["dataset"]
                         .as_array()
@@ -219,8 +232,7 @@ pub fn load_topics_from_file_and_add_hard_coded_features(paths: &[&str]) -> anyh
                             )
                         })
                         .filter(|(text, _)| text != "empty"),
-                ).map(|(mut topics,(text,label))|{
-                    topics.append(&mut get_features(text.to_owned()));
+                ).map(|(topics,(text,label))|{
                     (topics,label)
                 })
         })

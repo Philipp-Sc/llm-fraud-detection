@@ -13,7 +13,8 @@ pub fn fraud_probabilities(texts: &[&str]/*, topics: &[&str]*/) ->  anyhow::Resu
     // add custom features
     // add sentiment predictions
     for i in 0..texts.len() {
-        topic_predictions[i].append(&mut get_features(texts[i].to_owned()));
+        let text = texts[i].to_owned();
+        topic_predictions[i].append(&mut get_features(&text));
         topic_predictions[i].push(sentiment_predictions[i]);
     }
 

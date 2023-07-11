@@ -14,7 +14,7 @@ pub mod feature_selection;
 use data::read_datasets;
 
 
-pub const OLD_FRAUD_INDICATORS: [&str;156] = [
+pub const ALL_FRAUD_INDICATORS: [&str;156] = [
     "Reliable, trustworthy references or sources",
     "Neutral language, no leading statements",
     "Educational content",
