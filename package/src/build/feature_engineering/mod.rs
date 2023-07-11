@@ -1,8 +1,9 @@
 use std::collections::HashSet;
 use importance::score::Model;
 use words_count::WordsCount;
-use crate::build::classification::deep_learning::MockModel;
+use crate::build::classification::deep_learning::NNMockModel;
 use linkify::LinkFinder;
+use crate::build::classification::ClassificationMockModel;
 
 
 lazy_static::lazy_static! {
@@ -55,7 +56,7 @@ pub fn get_features(text: &String, topic_predictions: Vec<f64>, sentiment_predic
         features.push(super::naive_bayes::categorical_nb_model_predict(vec![text.clone()]).unwrap()[0] as f64);
         features.push(super::naive_bayes::gaussian_nb_model_predict(vec![text.clone()]).unwrap()[0] as f64);
         // NN
-        let model = MockModel{ label: "./NeuralNetTopicsAndCustomFeatures.bin".to_string()};
+        let model = NNMockModel { label: "./NeuralNetTopicsAndCustomFeatures.bin".to_string()};
 
         let mut input: Vec<Vec<f64>> = Vec::new();
         input.push(topic_predictions.clone());
@@ -64,7 +65,8 @@ pub fn get_features(text: &String, topic_predictions: Vec<f64>, sentiment_predic
 
         features.append(&mut model.predict(&input));
         // RandomForest
-        // !!
+        let model = ClassificationMockModel { label: "./RandomForestRegressorTopicsAndCustomFeatures.bin".to_string()};
+        features.append(&mut model.predict(&input));
 
 
     }

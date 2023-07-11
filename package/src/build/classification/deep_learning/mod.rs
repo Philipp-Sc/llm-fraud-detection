@@ -21,11 +21,11 @@ lazy_static! {
         };
     }
 
-pub struct MockModel {
+pub struct NNMockModel {
     pub label: String
 }
 
-impl Model for MockModel {
+impl Model for NNMockModel {
     fn predict(&self, x: &Vec<Vec<f64>>) -> Vec<f64> {
         let device = tch::Device::cuda_if_available();
         let x_len = x[0].len() as i64;
@@ -365,7 +365,7 @@ fn calculate_mean_std_dev(x_dataset: &Vec<Vec<f64>>) -> (Vec<f64>, Vec<f64>) {
 
 pub fn feature_importance_nn(x_dataset_shuffled: &Vec<Vec<f64>>, y_dataset_shuffled: &Vec<f64>, feature_labels: Vec<String>) -> anyhow::Result<()> {
 
-    let model = MockModel{ label: "./NeuralNet.bin".to_string()};
+    let model = NNMockModel { label: "./NeuralNet.bin".to_string()};
 
     let opts = Opts {
         verbose: true,

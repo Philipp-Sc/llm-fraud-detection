@@ -16,56 +16,60 @@ use importance::score::*;
 pub mod deep_learning;
 
 lazy_static::lazy_static! {
-        static ref PREDICTOR_POOL: Arc<Mutex<Vec<Arc<Mutex<RandomForestRegressor<f64>>>>>> = {
+        static ref PREDICTOR_POOL: Arc<Mutex<Vec<(String,Arc<Mutex<RandomForestRegressor<f64>>>)>>> = {
             let mut pool = Vec::new();
             Arc::new(Mutex::new(pool))
         };
     }
 
-struct MockModel;
 
-impl Model for MockModel {
+pub struct ClassificationMockModel {
+    pub label: String
+}
+
+impl Model for ClassificationMockModel {
     fn predict(&self, x: &Vec<Vec<f64>>) -> Vec<f64> {
-        let model = get_model().unwrap();
         let x = DenseMatrix::from_2d_array(&x.iter().map(|x| &x[..]).collect::<Vec<&[f64]>>()[..]);
-        let predictor = get_model().expect("Failed to get a predictor from the pool.");
+        let predictor = get_model(&self.label).expect("Failed to get a predictor from the pool.");
         let model = predictor.lock().unwrap();
         model.predict(&x).unwrap()
     }
 }
 
 
-fn get_model() -> anyhow::Result<Arc<Mutex<RandomForestRegressor<f64>>>> {
+fn get_model(label: &String) -> anyhow::Result<Arc<Mutex<RandomForestRegressor<f64>>>> {
 
     let mut pool = PREDICTOR_POOL.lock().unwrap();
 
     // Check if any predictor is available in the pool
-    if let Some(predictor) = pool.iter().find(|p| !p.try_lock().is_err()) {
+    if let Some((_,predictor)) = pool.iter().find(|(l,p)| l==label && !p.try_lock().is_err()) {
         return Ok(Arc::clone(predictor));
     }
 
     // If all predictors are in use, wait until one becomes available
     while pool.len() >= 100 {
         std::thread::sleep(std::time::Duration::from_millis(100));
-        if let Some(predictor) = pool.iter().find(|p| !p.try_lock().is_err()) {
+        if let Some((_,predictor)) = pool.iter().find(|(l,p)| l==label && !p.try_lock().is_err()) {
             return Ok(Arc::clone(predictor));
         }
     }
 
     // Create a new predictor and add it to the pool
-    let model: RandomForestRegressor<f64> = match serde_json::from_str(&fs::read_to_string("./RandomForestRegressor.bin")?)? {
+    let model: RandomForestRegressor<f64> = match serde_json::from_str(&fs::read_to_string(label)?)? {
         Some(lr) => { lr },
-        None => { return Err(anyhow::anyhow!("Error: unable to load './RandomForestRegressor.bin'"));}
+        None => { return Err(anyhow::anyhow!(format!("Error: unable to load '{}'",label)));}
     };
     let new_predictor = Arc::new(Mutex::new(model));
-    pool.push(Arc::clone(&new_predictor));
+    pool.push((label.to_owned(),Arc::clone(&new_predictor)));
 
     Ok(new_predictor)
 }
 
 pub fn predict(x_dataset: &Vec<Vec<f64>>) ->  anyhow::Result<Vec<f64>> {
 
-    let model = MockModel;
+    let model = ClassificationMockModel {
+        label: "./RandomForestRegressor.bin".to_string(),
+    };
 
     Ok(model.predict(x_dataset))
 }
@@ -86,7 +90,9 @@ pub fn update_regression_model(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>) 
 
 pub fn test_regression_model(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>) -> anyhow::Result<()> {
 
-    let model = MockModel;
+    let model = ClassificationMockModel {
+        label: "./RandomForestRegressor.bin".to_string(),
+    };
     let y_hat = model.predict(x_dataset);
 
     let thresholds = vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
@@ -115,7 +121,9 @@ pub fn calculate_metrics(y: &[f64], y_hat: &[f64], thresholds: &[f64]) {
 
 pub fn feature_importance(x_dataset_shuffled: &Vec<Vec<f64>>, y_dataset_shuffled: &Vec<f64>, feature_labels: Vec<String>) -> anyhow::Result<()> {
 
-    let model = MockModel;
+    let model = ClassificationMockModel {
+        label: "./RandomForestRegressor.bin".to_string(),
+    };
 
     let opts = Opts {
         verbose: true,

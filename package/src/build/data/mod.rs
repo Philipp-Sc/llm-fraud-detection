@@ -3,7 +3,7 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 use crate::build::{language_model, sentiment};
 use crate::build::feature_engineering::get_features;
-use crate::build::classification::deep_learning::MockModel;
+use crate::build::classification::deep_learning::NNMockModel;
 use importance::score::Model;
 
 const MIN_TEXT_LENGTH: usize = 20;

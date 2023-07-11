@@ -4,7 +4,7 @@ pub mod cache;
 pub mod service;
 
 use importance::score::Model;
-use crate::build::classification::deep_learning::MockModel;
+use crate::build::classification::deep_learning::NNMockModel;
 use crate::build::feature_engineering::get_features;
 use crate::build::language_model::get_n_best_fraud_indicators;
 
