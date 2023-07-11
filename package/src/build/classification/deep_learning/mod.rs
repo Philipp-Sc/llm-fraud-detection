@@ -62,7 +62,7 @@ fn get_model(x_len: i64, label: &String) -> anyhow::Result<Arc<Mutex<Predictor>>
 
     // Create a new predictor and add it to the pool
     let mut model = get_new_nn(x_len);
-    let path = std::path::Path::new("./NeuralNet.bin");
+    let path = std::path::Path::new(label);
     model.load(path).unwrap();
     let new_predictor = Arc::new(Mutex::new(model));
     pool.push((label.to_owned(),Arc::clone(&new_predictor)));
