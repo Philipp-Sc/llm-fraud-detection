@@ -51,13 +51,14 @@ pub fn get_features(text: &String, topic_predictions: Vec<f64>, sentiment_predic
         features.push(super::naive_bayes::categorical_nb_model_predict(vec![text.clone()]).unwrap()[0] as f64);
         features.push(super::naive_bayes::gaussian_nb_model_predict(vec![text.clone()]).unwrap()[0] as f64);
         // NN
-        //let model = MockModel{ label: "./NeuralNetSelectedTopics.bin".to_string()};
-        //features.append(&mut model.predict(&vec![topic_predictions.clone()]));
-        // NN
-        //let model = MockModel{ label: "./NeuralNetCustomFeatures.bin".to_string()};
-        //features.append(&mut model.predict(&vec![custom_feature_vec.clone()]));
+        let model = MockModel{ label: "./NeuralNetTopicsAndCustomFeatures.bin".to_string()};
+        let mut input: Vec<Vec<f64>> = Vec::new();
+        input.push(topic_predictions.clone());
+        input[0].push(sentiment_prediction);
+        features.append(&mut model.predict(&input));
         // RandomForest
-        // ...
+        // !!
+
 
     }
 
