@@ -16,17 +16,22 @@ pub fn fraud_probabilities(texts: &[&str]/*, topics: &[&str]*/) ->  anyhow::Resu
 
 
     let mut input: Vec<Vec<f64>> = Vec::with_capacity(texts.len());
+
     for i in 0..texts.len() {
+        let mut tmp = Vec::new();
+
         let text = texts[i].to_owned();
-        input[i].append(&mut get_features(&text));
+        tmp.append(&mut get_features(&text));
 
         let model = MockModel{ label: "./NeuralNet.bin".to_string()};
         let prediction: f64 = model.predict(&vec![topic_predictions[i].clone()])[0];
 
-        input[i].append(&mut topic_predictions[i]);
-        input[i].push(prediction);
+        tmp.append(&mut topic_predictions[i]);
+        tmp.push(prediction);
 
-        input[i].push(sentiment_predictions[i]);
+        tmp.push(sentiment_predictions[i]);
+
+        input.push(tmp);
 
     }
 
