@@ -1,4 +1,6 @@
 use std::fs;
+use std::fs::File;
+use std::io::BufReader;
 use rust_bert::pipelines::zero_shot_classification::ZeroShotClassificationModel;
 use rust_bert::pipelines::sequence_classification::Label;
 
@@ -6,9 +8,10 @@ use crate::build::feature_engineering::get_features;
 
 use std::sync::Arc;
 use std::sync::Mutex;
-use crate::build::{ALL_FRAUD_INDICATORS, ALL_FRAUD_INDICATORS_SORTED, FRAUD_INDICATORS};
+use crate::build::{ALL_FRAUD_INDICATORS, FRAUD_INDICATORS};
 use rust_bert::pipelines::sentence_embeddings::{SentenceEmbeddingsModel, SentenceEmbeddingsModelType};
 use rust_bert::pipelines::sentence_embeddings::SentenceEmbeddingsBuilder;
+use serde_json::Value;
 
 
 lazy_static::lazy_static! {
@@ -23,8 +26,28 @@ lazy_static::lazy_static! {
 
     }
 
-pub fn get_n_best_fraud_indicators(n: usize) -> Vec<String> {
-    ALL_FRAUD_INDICATORS_SORTED.into_iter().take(n).map(|x| x.to_string()).collect()
+pub fn get_n_best_fraud_indicators(n: usize, path: &String) -> Vec<String> {
+    let file = File::open(&path).expect("Failed to open file");
+    let reader = BufReader::new(file);
+
+    // Parse the JSON from the file
+    let json: Value = serde_json::from_reader(reader).expect("Failed to parse JSON");
+
+    // Extract the feature importance array
+    let feature_importance = json["feature_importance"].as_array().unwrap_or_else(|| {
+        panic!("Failed to extract feature importance array");
+    });
+
+    // Load the strings into a Vec<String>
+    let strings: Vec<String> = feature_importance
+        .iter()
+        .map(|entry| entry[1].as_str().unwrap_or_else(|| {
+            panic!("Failed to extract string from entry");
+        }))
+        .map(|string| string.to_string())
+        .take(n)
+        .collect();
+    strings
 }
 
 pub fn get_fraud_indicators(all: bool) -> Vec<String> {
