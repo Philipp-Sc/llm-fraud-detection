@@ -186,14 +186,15 @@ fn naive_bayes_train_and_train_and_test_final_regression_model() -> anyhow::Resu
 fn feature_selection(model: String) -> anyhow::Result<()> {
 
     let shuffled_idx = generate_shuffled_idx(&JSON_DATASET)?;
-    let topic_selection = get_fraud_indicators(true);
+//    let topic_selection = get_fraud_indicators(true);
+    let topic_selection = get_n_best_fraud_indicators(30usize,&"feature_importance_random_forest_topics_only.json".to_string());
 
-    let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&JSON_DATASET,&shuffled_idx, &topic_selection, false,false,false,false)?;
+    let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&JSON_DATASET,&shuffled_idx, &topic_selection, false,false,false,true)?;
 
     //let hard_coded_feature_labels = get_hard_coded_feature_labels();
     //let sentiment = "Sentiment".to_string();
 
-    let feature_labels: Vec<String> = vec![/*hard_coded_feature_labels,*/topic_selection/*,sentiment*/].into_iter().flatten().collect();
+    let feature_labels: Vec<String> = vec![vec!["1".to_string(),"2".to_string(),"3".to_string(),"4".to_string(),"5".to_string()]].into_iter().flatten().collect();
 
     match model.as_str() {
         "random_forest" => {

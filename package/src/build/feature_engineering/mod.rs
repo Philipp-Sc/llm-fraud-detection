@@ -57,17 +57,17 @@ pub fn get_features(text: &String, text_embeddings: Vec<f64>, topic_predictions:
 
     if latent_variables {
         // Naive Bayes
-        features.push(super::naive_bayes::categorical_nb_model_predict(vec![text.clone()]).unwrap()[0] as f64);
-        features.push(super::naive_bayes::gaussian_nb_model_predict(vec![text.clone()]).unwrap()[0] as f64);
+//        features.push(super::naive_bayes::categorical_nb_model_predict(vec![text.clone()]).unwrap()[0] as f64);
+//        features.push(super::naive_bayes::gaussian_nb_model_predict(vec![text.clone()]).unwrap()[0] as f64);
         // NN
-        let model = NNMockModel { label: "./NeuralNetTopicsAndCustomFeatures.bin".to_string()};
-
+/*        let model = NNMockModel { label: "./NeuralNetTopicsAndCustomFeatures.bin".to_string()};
+*/
         let mut input: Vec<Vec<f64>> = Vec::new();
         input.push(topic_predictions.clone());
         input[0].push(sentiment_prediction);
         input[0].append(&mut custom_feature_vec.clone());
 
-        features.append(&mut model.predict(&input));
+//        features.append(&mut model.predict(&input));
         // RandomForest
         let model = ClassificationMockModel { label: "./RandomForestRegressorTopicsAndCustomFeatures.bin".to_string(), model_type: ModelType::RandomForest};
         features.append(&mut model.predict(&input));
