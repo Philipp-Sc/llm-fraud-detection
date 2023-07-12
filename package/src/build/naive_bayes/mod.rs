@@ -8,40 +8,100 @@ use linfa::dataset::Labels;
 use std::collections::HashMap;
 
 use std::fs;
+use std::ops::Deref;
 use regex::Regex;
 
 use std::sync::Arc;
 use std::sync::Mutex;
+use lazy_static::lazy_static;
 use smartcore::linalg::naive::dense_matrix::DenseMatrix;
 use smartcore::naive_bayes::categorical::CategoricalNB;
 
-lazy_static::lazy_static! {
-        static ref GAUSSIAN_NB_MODEL: Arc<Mutex<GaussianNb<f32, usize>>> = Arc::new(Mutex::new(get_gaussian_nb_model().unwrap()));
-        static ref CATEGORICAL_NB_MODEL: Arc<Mutex<CategoricalNB<f32, DenseMatrix<f32>>>> = Arc::new(Mutex::new(get_categorical_nb_model().unwrap()));
-        static ref VECTORIZER: Arc<Mutex<CountVectorizer>> = Arc::new(Mutex::new(get_vectorizer().unwrap()));
+lazy_static! {
+    static ref GAUSSIAN_NB_POOL: Arc<Mutex<Vec<(String, Arc<Mutex<GaussianNb<f32, usize>>>)>>> = Arc::new(Mutex::new(Vec::new()));
+    static ref CATEGORICAL_NB_POOL: Arc<Mutex<Vec<(String, Arc<Mutex<CategoricalNB<f32, DenseMatrix<f32>>>>)>>> = Arc::new(Mutex::new(Vec::new()));
+    static ref VECTORIZER_POOL: Arc<Mutex<Vec<(String, Arc<Mutex<CountVectorizer>>)>>> = Arc::new(Mutex::new(Vec::new()));
+}
 
+fn get_gaussian_nb_model() -> anyhow::Result<Arc<Mutex<GaussianNb<f32, usize>>>> {
+    let mut pool = GAUSSIAN_NB_POOL.deref().lock().unwrap();
+
+    // Check if any predictor is available in the pool
+    if let Some((_, predictor)) = pool.iter().find(|(_, p)| !p.try_lock().is_err()) {
+        return Ok(Arc::clone(predictor));
     }
 
-fn get_categorical_nb_model() -> anyhow::Result<CategoricalNB<f32, DenseMatrix<f32>>>{
-    let model: CategoricalNB<f32, DenseMatrix<f32>> = match serde_json::from_str(&fs::read_to_string("./CategoricalNbModel.bin")?)? {
-        Some(lr) => { lr },
-        None => { return Err(anyhow::anyhow!("Error: unable to load './CategoricalNbModel.bin'"));}
+    // If all predictors are in use, wait until one becomes available
+    while pool.len() >= 500 {
+        std::thread::sleep(std::time::Duration::from_millis(100));
+        if let Some((_, predictor)) = pool.iter().find(|(_, p)| !p.try_lock().is_err()) {
+            return Ok(Arc::clone(predictor));
+        }
+    }
+
+    // Create a new predictor and add it to the pool
+    let new_predictor = match serde_json::from_str(&fs::read_to_string("./GaussianNbModel.bin")?)? {
+        Some(lr) => lr,
+        None => return Err(anyhow::anyhow!("Error: unable to load './GaussianNbModel.bin'"))
     };
-    Ok(model)
+    let new_predictor = Arc::new(Mutex::new(new_predictor));
+    pool.push(("./GaussianNbModel.bin".to_owned(), Arc::clone(&new_predictor)));
+
+    Ok(new_predictor)
 }
-fn get_gaussian_nb_model() -> anyhow::Result<GaussianNb<f32, usize>>{
-    let model: GaussianNb<f32, usize> = match serde_json::from_str(&fs::read_to_string("./GaussianNbModel.bin")?)? {
-        Some(lr) => { lr },
-        None => { return Err(anyhow::anyhow!("Error: unable to load './GaussianNbModel.bin'"));}
+
+fn get_categorical_nb_model() -> anyhow::Result<Arc<Mutex<CategoricalNB<f32, DenseMatrix<f32>>>>> {
+    let mut pool = CATEGORICAL_NB_POOL.deref().lock().unwrap();
+
+    // Check if any predictor is available in the pool
+    if let Some((_, predictor)) = pool.iter().find(|(_, p)| !p.try_lock().is_err()) {
+        return Ok(Arc::clone(predictor));
+    }
+
+    // If all predictors are in use, wait until one becomes available
+    while pool.len() >= 500 {
+        std::thread::sleep(std::time::Duration::from_millis(100));
+        if let Some((_, predictor)) = pool.iter().find(|(_, p)| !p.try_lock().is_err()) {
+            return Ok(Arc::clone(predictor));
+        }
+    }
+
+    // Create a new predictor and add it to the pool
+    let new_predictor = match serde_json::from_str(&fs::read_to_string("./CategoricalNBModel.bin")?)? {
+        Some(lr) => lr,
+        None => return Err(anyhow::anyhow!("Error: unable to load './CategoricalNBModel.bin'"))
     };
-    Ok(model)
+    let new_predictor = Arc::new(Mutex::new(new_predictor));
+    pool.push(("./CategoricalNBModel.bin".to_owned(), Arc::clone(&new_predictor)));
+
+    Ok(new_predictor)
 }
-fn get_vectorizer() -> anyhow::Result<CountVectorizer> {
-    let vectorizer: CountVectorizer =  match serde_json::from_str(&fs::read_to_string("./CountVectorizer.bin")?)? {
-        Some(lr) => { lr },
-        None => { return Err(anyhow::anyhow!("Error: unable to load './CountVectorizer.bin'"));}
+
+fn get_vectorizer() -> anyhow::Result<Arc<Mutex<CountVectorizer>>> {
+    let mut pool = VECTORIZER_POOL.deref().lock().unwrap();
+
+    // Check if any vectorizer is available in the pool
+    if let Some((_, vectorizer)) = pool.iter().find(|(_, v)| !v.try_lock().is_err()) {
+        return Ok(Arc::clone(vectorizer));
+    }
+
+    // If all vectorizers are in use, wait until one becomes available
+    while pool.len() >= 500 {
+        std::thread::sleep(std::time::Duration::from_millis(100));
+        if let Some((_, vectorizer)) = pool.iter().find(|(_, v)| !v.try_lock().is_err()) {
+            return Ok(Arc::clone(vectorizer));
+        }
+    }
+
+    // Create a new vectorizer and add it to the pool
+    let new_vectorizer = match serde_json::from_str(&fs::read_to_string("./CountVectorizer.bin")?)? {
+        Some(lr) => lr,
+        None => return Err(anyhow::anyhow!("Error: unable to load './CountVectorizer.bin'"))
     };
-    Ok(vectorizer)
+    let new_vectorizer = Arc::new(Mutex::new(new_vectorizer));
+    pool.push(("./CountVectorizer.bin".to_owned(), Arc::clone(&new_vectorizer)));
+
+    Ok(new_vectorizer)
 }
 
 fn remove_non_letters(text: &str) -> String {
@@ -53,14 +113,18 @@ fn remove_non_letters(text: &str) -> String {
 }
 
 pub fn gaussian_nb_model_predict(x_dataset: Vec<String>) ->  anyhow::Result<Vec<usize>> {
+    let binding = get_vectorizer()?;
+    let vectorizer = binding.lock().unwrap();
 
-    let vectorizer = VECTORIZER.try_lock().unwrap();
-    
+
     let test_texts: ArrayBase<OwnedRepr<String>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((x_dataset.len(),), x_dataset).unwrap();
 
     let test_records = vectorizer.transform(&test_texts).to_dense();
     let test_records = test_records.mapv(|c| c as f32);
-    let model = GAUSSIAN_NB_MODEL.try_lock().unwrap();
+
+    let binding = get_gaussian_nb_model()?;
+    let model = binding.lock().unwrap();
+
 
     let prediction = model.predict(&test_records).into_raw_vec();
     Ok(prediction)
@@ -68,8 +132,8 @@ pub fn gaussian_nb_model_predict(x_dataset: Vec<String>) ->  anyhow::Result<Vec<
 }
 
 pub fn categorical_nb_model_predict(x_dataset: Vec<String>) ->  anyhow::Result<Vec<usize>> {
-
-    let vectorizer = VECTORIZER.try_lock().unwrap();
+    let binding = get_vectorizer()?;
+    let vectorizer = binding.lock().unwrap();
 
     let test_texts: ArrayBase<OwnedRepr<String>, Dim<[usize; 1]>> = ArrayBase::from_shape_vec((x_dataset.len(),), x_dataset).unwrap();
     let test_records = vectorizer.transform(&test_texts).to_dense();
@@ -77,7 +141,9 @@ pub fn categorical_nb_model_predict(x_dataset: Vec<String>) ->  anyhow::Result<V
     let x_data: Vec<Vec<f32>> = test_records.outer_iter().map(|row| row.to_vec().into_iter().map(|x| x as f32).collect::<Vec<f32>>()).collect();
     let x = DenseMatrix::<f32>::from_2d_vec(&x_data);
 
-    let model = CATEGORICAL_NB_MODEL.try_lock().unwrap();
+    let binding = get_categorical_nb_model()?;
+    let model = binding.lock().unwrap();
+
 
     let prediction = model.predict(&x)?.into_iter().map(|x| x as usize).collect();
     Ok(prediction)
@@ -261,17 +327,19 @@ pub fn update_categorical_naive_bayes_model(x_dataset: &Vec<String>, y_dataset: 
 
     println!();
 
-    let vectorizer = VECTORIZER.try_lock().unwrap();
+    let binding = get_vectorizer()?;
+    let vectorizer = binding.lock().unwrap();
 
-/*
-    let min_freq = 0.0005;
-    let max_freq = 0.500;
-    let vectorizer = CountVectorizer::params()
-        .convert_to_lowercase(true)
-        .document_frequency(min_freq,max_freq)
-        .n_gram_range(1,3)
-        .fit(&texts).unwrap();
-*/
+
+    /*
+        let min_freq = 0.0005;
+        let max_freq = 0.500;
+        let vectorizer = CountVectorizer::params()
+            .convert_to_lowercase(true)
+            .document_frequency(min_freq,max_freq)
+            .n_gram_range(1,3)
+            .fit(&texts).unwrap();
+    */
 
     println!(
         "We obtain a vocabulary with {} entries",
@@ -313,7 +381,7 @@ pub fn update_categorical_naive_bayes_model(x_dataset: &Vec<String>, y_dataset: 
     let x = DenseMatrix::<f32>::from_2d_vec(&x_data);
 
     let nb = CategoricalNB::fit(&x, &labels.into_raw_vec().into_iter().map(|x| x as f32).collect::<Vec<f32>>(), Default::default()).unwrap();
-    fs::write("./CategoricalNbModel.bin", &serde_json::to_string(&nb)?).ok();
+    fs::write("./CategoricalNBModel.bin", &serde_json::to_string(&nb)?).ok();
 
     let x_data: Vec<Vec<f32>> = test_records.outer_iter().map(|row| row.to_vec().into_iter().map(|x| x as f32).collect::<Vec<f32>>()).collect();
     let x = DenseMatrix::<f32>::from_2d_vec(&x_data);

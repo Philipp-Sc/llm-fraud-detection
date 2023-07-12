@@ -97,28 +97,19 @@ pub fn create_dataset(paths: &[&str], shuffled_idx: &Vec<usize>, topic_selection
     assert_eq!(embedding_dataset.len(), sentiment_dataset.len());
     assert_eq!(y_dataset, y_data);
 
-    let x_dataset: Vec<_> = (0..text_dataset.len())
-        .into_iter()
-        .step_by(500)
-        .flat_map(|batch_start| {
-            let batch_end = std::cmp::min(batch_start + 500, text_dataset.len());
-            (batch_start..batch_end)
-                .into_par_iter()
-                .map(|i| {
-                    get_features(
-                        &text_dataset[i],
-                        embedding_dataset[i].clone(),
-                        topics_dataset[i].clone(),
-                        sentiment_dataset[i].clone(),
-                        embeddings,
-                        custom_features,
-                        topics,
-                        latent_variables,
-                    )
-                })
-                .collect::<Vec<_>>()
-        })
-        .collect();
+
+    let x_dataset: Vec<_> = (0..text_dataset.len()).into_par_iter().map(|i| {
+        get_features(
+            &text_dataset[i],
+            embedding_dataset[i].clone(),
+            topics_dataset[i].clone(),
+            sentiment_dataset[i].clone(),
+            embeddings,
+            custom_features,
+            topics,
+            latent_variables,
+        )
+    }).collect();
 
 
 
