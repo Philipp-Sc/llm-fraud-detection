@@ -67,12 +67,12 @@ fn get_categorical_nb_model() -> anyhow::Result<Arc<Mutex<CategoricalNB<f32, Den
     }
 
     // Create a new predictor and add it to the pool
-    let new_predictor = match serde_json::from_str(&fs::read_to_string("./CategoricalNBModel.bin")?)? {
+    let new_predictor = match serde_json::from_str(&fs::read_to_string("./CategoricalNbModel.bin")?)? {
         Some(lr) => lr,
-        None => return Err(anyhow::anyhow!("Error: unable to load './CategoricalNBModel.bin'"))
+        None => return Err(anyhow::anyhow!("Error: unable to load './CategoricalNbModel.bin'"))
     };
     let new_predictor = Arc::new(Mutex::new(new_predictor));
-    pool.push(("./CategoricalNBModel.bin".to_owned(), Arc::clone(&new_predictor)));
+    pool.push(("./CategoricalNbModel.bin".to_owned(), Arc::clone(&new_predictor)));
 
     Ok(new_predictor)
 }
@@ -381,7 +381,7 @@ pub fn update_categorical_naive_bayes_model(x_dataset: &Vec<String>, y_dataset: 
     let x = DenseMatrix::<f32>::from_2d_vec(&x_data);
 
     let nb = CategoricalNB::fit(&x, &labels.into_raw_vec().into_iter().map(|x| x as f32).collect::<Vec<f32>>(), Default::default()).unwrap();
-    fs::write("./CategoricalNBModel.bin", &serde_json::to_string(&nb)?).ok();
+    fs::write("./CategoricalNbModel.bin", &serde_json::to_string(&nb)?).ok();
 
     let x_data: Vec<Vec<f32>> = test_records.outer_iter().map(|row| row.to_vec().into_iter().map(|x| x as f32).collect::<Vec<f32>>()).collect();
     let x = DenseMatrix::<f32>::from_2d_vec(&x_data);
