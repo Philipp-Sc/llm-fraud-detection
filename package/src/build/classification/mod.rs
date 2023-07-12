@@ -105,6 +105,19 @@ pub fn test_knn_regression_model(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>
     Ok(())
 }
 
+pub fn predict_knn_regression_model(x_dataset: &Vec<Vec<f64>>) -> anyhow::Result<Vec<f64>> {
+
+    let model: KNNRegressor<f64,Euclidian> = match serde_json::from_str(&fs::read_to_string("./KNNRegressor.bin")?)? {
+        Some(lr) => { lr },
+        None => { return Err(anyhow::anyhow!(format!("Error: unable to load '{}'","./KNNRegressor.bin")));}
+    };
+    let x = DenseMatrix::from_2d_array(&x_dataset.iter().map(|x| &x[..]).collect::<Vec<&[f64]>>()[..]);
+
+    let y_hat = model.predict(&x).unwrap();
+
+    Ok(y_hat)
+}
+
 
 
 pub fn update_regression_model(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>) ->  anyhow::Result<()> {
