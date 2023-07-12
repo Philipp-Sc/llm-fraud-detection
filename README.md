@@ -105,7 +105,42 @@ Threshold >= 0.9: True Positive = 454, False Positive = 1, Precision = 0.998, Re
 </details>
 
 ### 3. Neural Net 
-Performs nearly as well as the Random Forest, both have different strenghts and weaknesses, adding this Neural Net improves the fraud detection further.
+Performs equally as well as the Random Forest, both have different strenghts and weaknesses, adding both leads to the best fraud detection.
+<details>
+<summary> <b>Expand to display the full evaluation (F-Score = 0.847) </b> </summary>
+
+```
+Performance on the training data (80%)
+```
+```rust
+Threshold >= 0.1: True Positive = 6899, False Positive = 2397, Precision = 0.742, Recall = 0.960, F-Score = 0.837
+Threshold >= 0.2: True Positive = 6717, False Positive = 1198, Precision = 0.849, Recall = 0.935, F-Score = 0.890
+Threshold >= 0.3: True Positive = 6582, False Positive = 824, Precision = 0.889, Recall = 0.916, F-Score = 0.902
+Threshold >= 0.4: True Positive = 6468, False Positive = 649, Precision = 0.909, Recall = 0.900, F-Score = 0.905
+Threshold >= 0.5: True Positive = 6353, False Positive = 509, Precision = 0.926, Recall = 0.884, F-Score = 0.905
+Threshold >= 0.6: True Positive = 6230, False Positive = 392, Precision = 0.941, Recall = 0.867, F-Score = 0.903
+Threshold >= 0.7: True Positive = 6110, False Positive = 307, Precision = 0.952, Recall = 0.851, F-Score = 0.898
+Threshold >= 0.8: True Positive = 5937, False Positive = 238, Precision = 0.961, Recall = 0.826, F-Score = 0.889
+Threshold >= 0.9: True Positive = 5655, False Positive = 156, Precision = 0.973, Recall = 0.787, F-Score = 0.870
+```
+```
+Performance on the test data (20%)
+```
+```rust
+Threshold >= 0.1: True Positive = 1631, False Positive = 500, Precision = 0.765, Recall = 0.892, F-Score = 0.824
+Threshold >= 0.2: True Positive = 1572, False Positive = 324, Precision = 0.829, Recall = 0.860, F-Score = 0.844
+Threshold >= 0.3: True Positive = 1547, False Positive = 281, Precision = 0.846, Recall = 0.846, F-Score = 0.846
+Threshold >= 0.4: True Positive = 1524, False Positive = 247, Precision = 0.861, Recall = 0.834, F-Score = 0.847
+Threshold >= 0.5: True Positive = 1505, False Positive = 226, Precision = 0.869, Recall = 0.823, F-Score = 0.846
+Threshold >= 0.6: True Positive = 1485, False Positive = 201, Precision = 0.881, Recall = 0.812, F-Score = 0.845
+Threshold >= 0.7: True Positive = 1466, False Positive = 182, Precision = 0.890, Recall = 0.802, F-Score = 0.843
+Threshold >= 0.8: True Positive = 1434, False Positive = 160, Precision = 0.900, Recall = 0.784, F-Score = 0.838
+Threshold >= 0.9: True Positive = 1398, False Positive = 141, Precision = 0.908, Recall = 0.765, F-Score = 0.830
+```
+</details>
+
+
+
 
 ## Features
 
