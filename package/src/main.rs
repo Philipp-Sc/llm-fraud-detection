@@ -35,7 +35,27 @@ pub const SENTENCES: [&str;6] = [
     "Hi Bob, can you send me your machine learning homework?",
     "Don't forget our special promotion: -30% on men shoes, only today!",
     "Hi Bob, don't forget our meeting today at 4pm.",
-    "⚠️ FINAL: LAST TERRA PHOENIX AIRDROP 🌎 ✅ CLAIM NOW All participants in this vote will receive a reward..",
+    "According to tokenomics: [cosmos-network.io][1] stakers can receive an airdrop. Claim airdrop here: [cosmos-network.io][2] ( Valid until 10.08.2023 )\
+
+Snapshot: 01.06.2023
+
+Conditions: The minimum amount of each token is the equivalent of $200 at the time of the snapshot.
+
+Tokens are allocated in proportion to the balance of every blockchain address accessible during the snapshot time.
+
+Supported networks:
+
+•ATOM
+
+•OSMO
+
+•SCRT
+
+•STARS
+
+•EVMOS
+
+•JUNO",
     "Social KYC oracle (TYC)  PFC is asking for 20k Luna to build a social KYC protocol.."
     ];
 
@@ -268,13 +288,13 @@ fn naive_bayes_train() -> anyhow::Result<()>{
 
     let dataset = rust_bert_fraud_detection_tools::build::data::read_datasets_and_shuffle(&CSV_DATASET[..],&shuffled_idx)?;
 
-/*  let (train_dataset, test_dataset) = split_vector(&dataset,0.7);
+    let (train_dataset, test_dataset) = split_vector(&dataset,0.8);
     let train_dataset = train_dataset.to_vec();
     let test_dataset = test_dataset.to_vec();
 
     create_naive_bayes_model(&train_dataset,&test_dataset)
-*/
-    create_naive_bayes_model(&dataset,&dataset)
+
+//    create_naive_bayes_model(&dataset,&dataset)
 }
 
 fn generate_feature_vectors() -> anyhow::Result<()> {
