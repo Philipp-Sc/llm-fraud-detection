@@ -67,7 +67,7 @@ fn get_model(label: &String, model_type: &ModelType) -> anyhow::Result<Arc<Mutex
     }
 
     // If all predictors are in use, wait until one becomes available
-    while pool.len() >= 100 {
+    while pool.len() >= 500 {
         thread::sleep(Duration::from_millis(100));
         if let Some((_, predictor)) = pool.iter().find(|(l, p)| l == label && !p.try_lock().is_err()) {
             return Ok(Arc::clone(predictor));

@@ -5,6 +5,8 @@ use crate::build::{language_model, sentiment};
 use crate::build::feature_engineering::get_features;
 use crate::build::classification::deep_learning::NNMockModel;
 use importance::score::Model;
+use rayon::iter::IntoParallelIterator;
+use rayon::iter::ParallelIterator;
 
 const MIN_TEXT_LENGTH: usize = 20;
 
@@ -96,20 +98,18 @@ pub fn create_dataset(paths: &[&str], shuffled_idx: &Vec<usize>, topic_selection
     assert_eq!(y_dataset, y_data);
 
 
-    let mut x_dataset: Vec<Vec<f64>> = Vec::with_capacity(text_dataset.len());
-    for i in 0..text_dataset.len(){
-        let tmp = get_features(
-             &text_dataset[i],
-            std::mem::take(&mut embedding_dataset[i]),
-            std::mem::take(&mut topics_dataset[i]),
-            std::mem::take(&mut sentiment_dataset[i]),
+    let x_dataset: Vec<_> = (0..text_dataset.len()).into_par_iter().map(|i| {
+        get_features(
+            &text_dataset[i],
+            embedding_dataset[i].clone(),
+            topics_dataset[i].clone(),
+            sentiment_dataset[i].clone(),
             embeddings,
             custom_features,
             topics,
             latent_variables,
-        );
-        x_dataset.push(tmp);
-    }
+        )
+    }).collect();
 
 
 
