@@ -8,7 +8,7 @@
 # rust-bert-fraud-detection
 Robust semi-supervised fraud detection using Rust native NLP pipelines.
 # About
-**rust-bert-fraud-detection** uses the NLP pipelines from [rust-bert](https://github.com/guillaume-be/rust-bert) to extract [topic predictions](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/mod.rs) (fraud indicators) via zero shot classification and sentiment from the given text. A simple [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) is then trained to predict spam/ham.     
+**rust-bert-fraud-detection** uses the NLP pipelines from [rust-bert](https://github.com/guillaume-be/rust-bert) to extract **[topic predictions](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/mod.rs)** (fraud indicators) via zero shot classification, **text embeddings** and **sentiment** from the given text. This data is then used to predict the fraud likelihood.
 
 The training data is generated from a diverse collection of commonly used spam/ham datasets:
 - Ling Spam,
@@ -18,7 +18,7 @@ The training data is generated from a diverse collection of commonly used spam/h
 - Youtube Spam,
 - Crypto Governance Proposals.
 
-Since the [Random Forest Regressor](https://docs.rs/smartcore/latest/smartcore/ensemble/random_forest_regressor/index.html) is trained on latent features  and NOT on a text encoding (such as Bag of Words) much less datapoints are needed to build a general and robust model which should work better accross different domains (e.g emails, websites and governance proposals).
+Since the model is trained only on latent features and NOT on a text encoding (such as Bag of Words) less datapoints are needed to build a general and robust model which works great accross different domains (e.g emails, websites and governance proposals) because the actuall text processing is done by the language model.
 
 
 # Use
@@ -52,7 +52,7 @@ fn main() -> anyhow::Result<()> {
 
 ```
 ``` 
-[0.7556460210069226, 0.10628275662417444, 0.5515625, 0.0, 0.6143134447463007, 0.15900739517397644]
+[0.9894613371035107, 0.000276886426871687, 0.9104875070580846, 0.03726339087300716, 0.8866797200530334, 0.6330588282652788]
 
 [1.0, 0.0, 1.0, 0.0, 1.0, 0.0]
 ```
@@ -62,50 +62,16 @@ fn main() -> anyhow::Result<()> {
 ## Models
 The fraud detection consists of a Random Forest Regressor and a set of predictors whose predictions are provided to the model:
 
-### 1. Naive Bayes
+### ~~1. Naive Bayes~~
 Naive Bayes classifier are well known for their effectiveness in text related tasks especially spam detection.  
 
 Two Naive Bayes classifiers have been trained on a Bag of Words representation of the spam/ham datasets.
 - [Categorical Naive Bayes classifier](https://docs.rs/smartcore/latest/smartcore/naive_bayes/categorical/struct.CategoricalNB.html) **(F-Score = 0.870)** 
 - [Gaussian Naive Bayes classifier](https://docs.rs/crate/linfa-bayes/latest) **(F-Score = 0.859)**
 
-### 2. Random Forest
-Performs exceptionally well when trained on the topic predictions, sentiment and custom features.
-<details>
-<summary> <b>Expand to display the full evaluation (F-Score = 0.841) </b> </summary>
 
-```
-Performance on the training data (80%)
-```
-```rust
-Threshold >= 0.1: True Positive = 7223, False Positive = 5440, Precision = 0.570, Recall = 1.000, F-Score = 0.726
-Threshold >= 0.2: True Positive = 7220, False Positive = 2053, Precision = 0.779, Recall = 0.999, F-Score = 0.875
-Threshold >= 0.3: True Positive = 7200, False Positive = 725, Precision = 0.909, Recall = 0.997, F-Score = 0.950
-Threshold >= 0.4: True Positive = 7123, False Positive = 227, Precision = 0.969, Recall = 0.986, F-Score = 0.977
-Threshold >= 0.5: True Positive = 6911, False Positive = 52, Precision = 0.993, Recall = 0.957, F-Score = 0.974
-Threshold >= 0.6: True Positive = 6466, False Positive = 8, Precision = 0.999, Recall = 0.895, F-Score = 0.944
-Threshold >= 0.7: True Positive = 5688, False Positive = 0, Precision = 1.000, Recall = 0.787, F-Score = 0.881
-Threshold >= 0.8: True Positive = 4461, False Positive = 0, Precision = 1.000, Recall = 0.617, F-Score = 0.763
-Threshold >= 0.9: True Positive = 2762, False Positive = 0, Precision = 1.000, Recall = 0.382, F-Score = 0.553
-```
-```
-Performance on the test data (20%)
-```
-```rust
-Threshold >= 0.1: True Positive = 1762, False Positive = 2044, Precision = 0.463, Recall = 0.986, F-Score = 0.630
-Threshold >= 0.2: True Positive = 1703, False Positive = 1063, Precision = 0.616, Recall = 0.953, F-Score = 0.748
-Threshold >= 0.3: True Positive = 1621, False Positive = 558, Precision = 0.744, Recall = 0.907, F-Score = 0.817
-Threshold >= 0.4: True Positive = 1506, False Positive = 289, Precision = 0.839, Recall = 0.843, F-Score = 0.841
-Threshold >= 0.5: True Positive = 1360, False Positive = 139, Precision = 0.907, Recall = 0.761, F-Score = 0.828
-Threshold >= 0.6: True Positive = 1212, False Positive = 66, Precision = 0.948, Recall = 0.678, F-Score = 0.791
-Threshold >= 0.7: True Positive = 1033, False Positive = 25, Precision = 0.976, Recall = 0.578, F-Score = 0.726
-Threshold >= 0.8: True Positive = 763, False Positive = 8, Precision = 0.990, Recall = 0.427, F-Score = 0.597
-Threshold >= 0.9: True Positive = 454, False Positive = 1, Precision = 0.998, Recall = 0.254, F-Score = 0.405
-```
-</details>
-
-### 3. Neural Net 
-Performs equally as well as the Random Forest, both have different strenghts and weaknesses, adding both leads to the best fraud detection.
+### ~~2. Neural Net~~
+Performs equally as well as the Random Forest, both have different strenghts and weaknesses. 
 <details>
 <summary> <b>Expand to display the full evaluation (F-Score = 0.847) </b> </summary>
 
@@ -139,7 +105,43 @@ Threshold >= 0.9: True Positive = 1398, False Positive = 141, Precision = 0.908,
 ```
 </details>
 
-### 4. KNN Regressor
+
+### 3. Random Forest ⭐
+Generally seems to slightly outperform the Neural Net. (Also faster to train!)
+<details>
+<summary> <b>Expand to display the full evaluation (F-Score = 0.841) </b> </summary>
+
+```
+Performance on the training data (80%)
+```
+```rust
+Threshold >= 0.1: True Positive = 7223, False Positive = 5440, Precision = 0.570, Recall = 1.000, F-Score = 0.726
+Threshold >= 0.2: True Positive = 7220, False Positive = 2053, Precision = 0.779, Recall = 0.999, F-Score = 0.875
+Threshold >= 0.3: True Positive = 7200, False Positive = 725, Precision = 0.909, Recall = 0.997, F-Score = 0.950
+Threshold >= 0.4: True Positive = 7123, False Positive = 227, Precision = 0.969, Recall = 0.986, F-Score = 0.977
+Threshold >= 0.5: True Positive = 6911, False Positive = 52, Precision = 0.993, Recall = 0.957, F-Score = 0.974
+Threshold >= 0.6: True Positive = 6466, False Positive = 8, Precision = 0.999, Recall = 0.895, F-Score = 0.944
+Threshold >= 0.7: True Positive = 5688, False Positive = 0, Precision = 1.000, Recall = 0.787, F-Score = 0.881
+Threshold >= 0.8: True Positive = 4461, False Positive = 0, Precision = 1.000, Recall = 0.617, F-Score = 0.763
+Threshold >= 0.9: True Positive = 2762, False Positive = 0, Precision = 1.000, Recall = 0.382, F-Score = 0.553
+```
+```
+Performance on the test data (20%)
+```
+```rust
+Threshold >= 0.1: True Positive = 1762, False Positive = 2044, Precision = 0.463, Recall = 0.986, F-Score = 0.630
+Threshold >= 0.2: True Positive = 1703, False Positive = 1063, Precision = 0.616, Recall = 0.953, F-Score = 0.748
+Threshold >= 0.3: True Positive = 1621, False Positive = 558, Precision = 0.744, Recall = 0.907, F-Score = 0.817
+Threshold >= 0.4: True Positive = 1506, False Positive = 289, Precision = 0.839, Recall = 0.843, F-Score = 0.841
+Threshold >= 0.5: True Positive = 1360, False Positive = 139, Precision = 0.907, Recall = 0.761, F-Score = 0.828
+Threshold >= 0.6: True Positive = 1212, False Positive = 66, Precision = 0.948, Recall = 0.678, F-Score = 0.791
+Threshold >= 0.7: True Positive = 1033, False Positive = 25, Precision = 0.976, Recall = 0.578, F-Score = 0.726
+Threshold >= 0.8: True Positive = 763, False Positive = 8, Precision = 0.990, Recall = 0.427, F-Score = 0.597
+Threshold >= 0.9: True Positive = 454, False Positive = 1, Precision = 0.998, Recall = 0.254, F-Score = 0.405
+```
+</details>
+
+### 4. KNN Regressor ⭐
 Trained on text embeddings generated by BERT.
 
 <details><summary> <b>Expand to display the full evaluation (F-Score = 0.881) </b> </summary>
@@ -177,40 +179,58 @@ Threshold >= 0.9: True Positive = 1439, False Positive = 56, Precision = 0.963, 
 
 ## Final aggregator model
 Takes in the predictions from 1-4 and predicts spam/ham.
-
 <details>
-<summary> <b>Expand to display the full evaluation (F-Score = 0.982) </b> </summary>
+<summary> <b>Expand to display the full evaluation (F-Score = 0.99) </b> </summary>
 
 ```
 Performance on the training data (80%)
 ```
 ```rust
-Threshold >= 0.1: True Positive = 7158, False Positive = 466, Precision = 0.939, Recall = 0.998, F-Score = 0.967
-Threshold >= 0.2: True Positive = 7117, False Positive = 174, Precision = 0.976, Recall = 0.992, F-Score = 0.984
-Threshold >= 0.3: True Positive = 7099, False Positive = 110, Precision = 0.985, Recall = 0.989, F-Score = 0.987
-Threshold >= 0.4: True Positive = 7074, False Positive = 82, Precision = 0.989, Recall = 0.986, F-Score = 0.987
-Threshold >= 0.5: True Positive = 7058, False Positive = 53, Precision = 0.993, Recall = 0.984, F-Score = 0.988
-Threshold >= 0.6: True Positive = 7037, False Positive = 36, Precision = 0.995, Recall = 0.981, F-Score = 0.988
-Threshold >= 0.7: True Positive = 7000, False Positive = 25, Precision = 0.996, Recall = 0.976, F-Score = 0.986
-Threshold >= 0.8: True Positive = 6964, False Positive = 9, Precision = 0.999, Recall = 0.971, F-Score = 0.984
-Threshold >= 0.9: True Positive = 6606, False Positive = 2, Precision = 1.000, Recall = 0.921, F-Score = 0.959
+Threshold >= 0.1: True Positive = 7181, False Positive = 939, Precision = 0.884, Recall = 1.000, F-Score = 0.939
+Threshold >= 0.2: True Positive = 7175, False Positive = 313, Precision = 0.958, Recall = 0.999, F-Score = 0.978
+Threshold >= 0.3: True Positive = 7166, False Positive = 147, Precision = 0.980, Recall = 0.998, F-Score = 0.989
+Threshold >= 0.4: True Positive = 7138, False Positive = 81, Precision = 0.989, Recall = 0.994, F-Score = 0.991
+Threshold >= 0.5: True Positive = 7102, False Positive = 49, Precision = 0.993, Recall = 0.989, F-Score = 0.991
+Threshold >= 0.6: True Positive = 7081, False Positive = 35, Precision = 0.995, Recall = 0.986, F-Score = 0.990
+Threshold >= 0.7: True Positive = 7036, False Positive = 19, Precision = 0.997, Recall = 0.980, F-Score = 0.988
+Threshold >= 0.8: True Positive = 6995, False Positive = 7, Precision = 0.999, Recall = 0.974, F-Score = 0.986
+Threshold >= 0.9: True Positive = 6912, False Positive = 0, Precision = 1.000, Recall = 0.962, F-Score = 0.981
 ```
 ```
 Performance on the test data (20%)
 ```
 ```rust
-Threshold >= 0.1: True Positive = 1827, False Positive = 143, Precision = 0.927, Recall = 0.995, F-Score = 0.960
-Threshold >= 0.2: True Positive = 1811, False Positive = 58, Precision = 0.969, Recall = 0.986, F-Score = 0.977
-Threshold >= 0.3: True Positive = 1809, False Positive = 43, Precision = 0.977, Recall = 0.985, F-Score = 0.981
-Threshold >= 0.4: True Positive = 1803, False Positive = 36, Precision = 0.980, Recall = 0.981, F-Score = 0.981
-Threshold >= 0.5: True Positive = 1802, False Positive = 32, Precision = 0.983, Recall = 0.981, F-Score = 0.982
-Threshold >= 0.6: True Positive = 1792, False Positive = 23, Precision = 0.987, Recall = 0.976, F-Score = 0.981
-Threshold >= 0.7: True Positive = 1785, False Positive = 16, Precision = 0.991, Recall = 0.972, F-Score = 0.981
-Threshold >= 0.8: True Positive = 1776, False Positive = 11, Precision = 0.994, Recall = 0.967, F-Score = 0.980
-Threshold >= 0.9: True Positive = 1676, False Positive = 3, Precision = 0.998, Recall = 0.912, F-Score = 0.953
+Threshold >= 0.1: True Positive = 1826, False Positive = 210, Precision = 0.897, Recall = 0.998, F-Score = 0.945
+Threshold >= 0.2: True Positive = 1823, False Positive = 81, Precision = 0.957, Recall = 0.997, F-Score = 0.977
+Threshold >= 0.3: True Positive = 1820, False Positive = 31, Precision = 0.983, Recall = 0.995, F-Score = 0.989
+Threshold >= 0.4: True Positive = 1811, False Positive = 20, Precision = 0.989, Recall = 0.990, F-Score = 0.990
+Threshold >= 0.5: True Positive = 1807, False Positive = 16, Precision = 0.991, Recall = 0.988, F-Score = 0.990
+Threshold >= 0.6: True Positive = 1798, False Positive = 12, Precision = 0.993, Recall = 0.983, F-Score = 0.988
+Threshold >= 0.7: True Positive = 1789, False Positive = 8, Precision = 0.996, Recall = 0.978, F-Score = 0.987
+Threshold >= 0.8: True Positive = 1781, False Positive = 4, Precision = 0.998, Recall = 0.974, F-Score = 0.986
+Threshold >= 0.9: True Positive = 1767, False Positive = 3, Precision = 0.998, Recall = 0.966, F-Score = 0.982
 ```
 </details>
 
+
+<details>
+<summary> <b>Expand to display the feature importance breakdown </b> </summary>
+
+Permutation feature importance:
+
+- 0.005730121457193: Categorical Naive Bayes classifier  
+- 0.007951363662145: Gaussian Naive Bayes classifier    
+- -3.04369026383e-5: Neural Network 
+- **0.425603522684017: Random Forest Regressor** ⭐
+- **0.571354464392836: KNN Regressor** ⭐
+
+Adding the KNN Regressor resulted in a few changes:
+- The Neural Network now has very little to no influence on the final prediction.
+- The Naive Bayes classifier have lost their usefulness.
+
+This allows us to simplify the model and discard the models from 1-3 while keeping the model unaffected.
+ 
+</details>
 
 
 
@@ -332,10 +352,12 @@ Or just use the provided model to get rid of spam!
 # Outlook
 - **rust-bert-fraud-detection** may be improved by finding a better set of [topics/fraud indicators](https://github.com/Philipp-Sc/rust-bert-fraud-detection/blob/main/package/src/build/mod.rs) to be extracted and used for the classification.
 - Feature selection: using more topic predictions (limited by available compute)
-- Replace BERT with a better language model (zero shot classification, sentiment prediction)
-- Improving the performance of the [Naive Bayes classifier](https://docs.rs/crate/linfa-bayes/latest), including adjustments to the used count vectorizer.
+- Replace BERT with a better language model (zero shot classification, sentiment prediction, text embedding)
+- ~~Improving the performance of the [Naive Bayes classifier](https://docs.rs/crate/linfa-bayes/latest), including adjustments to the used count vectorizer.~~
+- ~~Replacing the Random Forest Regressor with a Neural Network.~~
+- Improving the KNN Regressor (find a better ```k``` value)
 - Adding new custom features.
-- More (domain specific) training data. (All models were only trained on English text)
+- More training data. (All models were trained on **English** text)
 
 # Docker
 ```sudo docker build -t rust-bert-fraud-detection .``` (build image)
