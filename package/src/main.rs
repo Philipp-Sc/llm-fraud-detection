@@ -218,7 +218,7 @@ fn train_and_test_final_model(eval: bool, model: String) -> anyhow::Result<()> {
     let topic_selection = get_n_best_fraud_indicators(30usize,&"feature_importance_random_forest_topics_only.json".to_string());
     //let topics = get_n_best_fraud_indicators(30usize,&"feature_importance_nn_topics_only.json".to_string());
 
-    let (mut x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&JSON_DATASET,&shuffled_idx, &topic_selection,false,false,false,true)?;
+    let (mut x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&JSON_DATASET,&shuffled_idx, &topic_selection,true,false,false,false)?;
 
     if model.as_str() == "nn" {
         let (z_dataset, mean, std_dev) = z_score_normalize(&x_dataset, None);
@@ -227,6 +227,10 @@ fn train_and_test_final_model(eval: bool, model: String) -> anyhow::Result<()> {
 
     if !eval {
         match model.as_str() {
+            "knn" => {
+                rust_bert_fraud_detection_tools::build::classification::update_knn_regression_model(&x_dataset,&y_dataset)?;
+                rust_bert_fraud_detection_tools::build::classification::test_knn_regression_model(&x_dataset,&y_dataset)?;
+            }
             "random_forest" => {
                 rust_bert_fraud_detection_tools::build::create_classification_model(&x_dataset,&y_dataset)?;
                 rust_bert_fraud_detection_tools::build::test_classification_model(&x_dataset,&y_dataset)?;            },
@@ -251,6 +255,11 @@ fn train_and_test_final_model(eval: bool, model: String) -> anyhow::Result<()> {
         let y_test = y_test.to_vec();
 
         match model.as_str() {
+            "knn" => {
+                rust_bert_fraud_detection_tools::build::classification::update_knn_regression_model(&x_train,&y_train)?;
+                rust_bert_fraud_detection_tools::build::classification::test_knn_regression_model(&x_train,&y_train)?;
+                rust_bert_fraud_detection_tools::build::classification::test_knn_regression_model(&x_test,&y_test)?;
+            }
             "random_forest" => {
                 rust_bert_fraud_detection_tools::build::create_classification_model(&x_train, &y_train)?;
                 rust_bert_fraud_detection_tools::build::test_classification_model(&x_train, &y_train)?;

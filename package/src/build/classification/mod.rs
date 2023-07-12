@@ -12,6 +12,8 @@ use std::fs;
 
 use importance::*;
 use importance::score::*;
+use smartcore::math::distance::euclidian::Euclidian;
+use smartcore::neighbors::knn_regressor::KNNRegressor;
 
 pub mod deep_learning;
 
@@ -73,6 +75,36 @@ pub fn predict(x_dataset: &Vec<Vec<f64>>) ->  anyhow::Result<Vec<f64>> {
 
     Ok(model.predict(x_dataset))
 }
+
+pub fn update_knn_regression_model(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>) ->  anyhow::Result<()> {
+
+    let x = DenseMatrix::from_2d_array(&x_dataset.iter().map(|x| &x[..]).collect::<Vec<&[f64]>>()[..]);
+    let y = y_dataset;
+
+
+    let regressor = KNNRegressor::fit(&x, &y, smartcore::neighbors::knn_regressor::KNNRegressorParameters::default()).unwrap();
+    fs::write("./KNNRegressor.bin", &serde_json::to_string(&regressor)?).ok();
+
+    Ok(())
+}
+
+
+pub fn test_knn_regression_model(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>) -> anyhow::Result<()> {
+
+    let model: KNNRegressor<f64,Euclidian> = match serde_json::from_str(&fs::read_to_string("./KNNRegressor.bin")?)? {
+        Some(lr) => { lr },
+        None => { return Err(anyhow::anyhow!(format!("Error: unable to load '{}'","./KNNRegressor.bin")));}
+    };
+    let x = DenseMatrix::from_2d_array(&x_dataset.iter().map(|x| &x[..]).collect::<Vec<&[f64]>>()[..]);
+
+    let y_hat = model.predict(&x).unwrap();
+
+    let thresholds = vec![0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9];
+
+    calculate_metrics(&y_dataset,&y_hat, &thresholds);
+    Ok(())
+}
+
 
 
 pub fn update_regression_model(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>) ->  anyhow::Result<()> {
