@@ -62,41 +62,6 @@ fn main() -> anyhow::Result<()> {
 ## Models
 The fraud detection consists of a Random Forest Regressor and a set of predictors (Naive Bayes, Random Forest, Neural Net) whose predictions are provided to the model.
 
-<details>
-<summary> <b>Expand to display the full evaluation (F-Score = 0.982) </b> </summary>
-
-```
-Performance on the training data (80%)
-```
-```rust
-Threshold >= 0.1: True Positive = 7158, False Positive = 466, Precision = 0.939, Recall = 0.998, F-Score = 0.967
-Threshold >= 0.2: True Positive = 7117, False Positive = 174, Precision = 0.976, Recall = 0.992, F-Score = 0.984
-Threshold >= 0.3: True Positive = 7099, False Positive = 110, Precision = 0.985, Recall = 0.989, F-Score = 0.987
-Threshold >= 0.4: True Positive = 7074, False Positive = 82, Precision = 0.989, Recall = 0.986, F-Score = 0.987
-Threshold >= 0.5: True Positive = 7058, False Positive = 53, Precision = 0.993, Recall = 0.984, F-Score = 0.988
-Threshold >= 0.6: True Positive = 7037, False Positive = 36, Precision = 0.995, Recall = 0.981, F-Score = 0.988
-Threshold >= 0.7: True Positive = 7000, False Positive = 25, Precision = 0.996, Recall = 0.976, F-Score = 0.986
-Threshold >= 0.8: True Positive = 6964, False Positive = 9, Precision = 0.999, Recall = 0.971, F-Score = 0.984
-Threshold >= 0.9: True Positive = 6606, False Positive = 2, Precision = 1.000, Recall = 0.921, F-Score = 0.959
-```
-```
-Performance on the test data (20%)
-```
-```rust
-Threshold >= 0.1: True Positive = 1827, False Positive = 143, Precision = 0.927, Recall = 0.995, F-Score = 0.960
-Threshold >= 0.2: True Positive = 1811, False Positive = 58, Precision = 0.969, Recall = 0.986, F-Score = 0.977
-Threshold >= 0.3: True Positive = 1809, False Positive = 43, Precision = 0.977, Recall = 0.985, F-Score = 0.981
-Threshold >= 0.4: True Positive = 1803, False Positive = 36, Precision = 0.980, Recall = 0.981, F-Score = 0.981
-Threshold >= 0.5: True Positive = 1802, False Positive = 32, Precision = 0.983, Recall = 0.981, F-Score = 0.982
-Threshold >= 0.6: True Positive = 1792, False Positive = 23, Precision = 0.987, Recall = 0.976, F-Score = 0.981
-Threshold >= 0.7: True Positive = 1785, False Positive = 16, Precision = 0.991, Recall = 0.972, F-Score = 0.981
-Threshold >= 0.8: True Positive = 1776, False Positive = 11, Precision = 0.994, Recall = 0.967, F-Score = 0.980
-Threshold >= 0.9: True Positive = 1676, False Positive = 3, Precision = 0.998, Recall = 0.912, F-Score = 0.953
-```
-</details>
-
-
-
 ### 1. Naive Bayes
 Naive Bayes classifier are well known for their effectiveness in text related tasks especially spam detection.  
 
@@ -171,6 +136,42 @@ Threshold >= 0.6: True Positive = 1485, False Positive = 201, Precision = 0.881,
 Threshold >= 0.7: True Positive = 1466, False Positive = 182, Precision = 0.890, Recall = 0.802, F-Score = 0.843
 Threshold >= 0.8: True Positive = 1434, False Positive = 160, Precision = 0.900, Recall = 0.784, F-Score = 0.838
 Threshold >= 0.9: True Positive = 1398, False Positive = 141, Precision = 0.908, Recall = 0.765, F-Score = 0.830
+```
+</details>
+
+## Final aggregator model
+Takes in the predictions from 1-3 and predicts spam/ham.
+
+<details>
+<summary> <b>Expand to display the full evaluation (F-Score = 0.982) </b> </summary>
+
+```
+Performance on the training data (80%)
+```
+```rust
+Threshold >= 0.1: True Positive = 7158, False Positive = 466, Precision = 0.939, Recall = 0.998, F-Score = 0.967
+Threshold >= 0.2: True Positive = 7117, False Positive = 174, Precision = 0.976, Recall = 0.992, F-Score = 0.984
+Threshold >= 0.3: True Positive = 7099, False Positive = 110, Precision = 0.985, Recall = 0.989, F-Score = 0.987
+Threshold >= 0.4: True Positive = 7074, False Positive = 82, Precision = 0.989, Recall = 0.986, F-Score = 0.987
+Threshold >= 0.5: True Positive = 7058, False Positive = 53, Precision = 0.993, Recall = 0.984, F-Score = 0.988
+Threshold >= 0.6: True Positive = 7037, False Positive = 36, Precision = 0.995, Recall = 0.981, F-Score = 0.988
+Threshold >= 0.7: True Positive = 7000, False Positive = 25, Precision = 0.996, Recall = 0.976, F-Score = 0.986
+Threshold >= 0.8: True Positive = 6964, False Positive = 9, Precision = 0.999, Recall = 0.971, F-Score = 0.984
+Threshold >= 0.9: True Positive = 6606, False Positive = 2, Precision = 1.000, Recall = 0.921, F-Score = 0.959
+```
+```
+Performance on the test data (20%)
+```
+```rust
+Threshold >= 0.1: True Positive = 1827, False Positive = 143, Precision = 0.927, Recall = 0.995, F-Score = 0.960
+Threshold >= 0.2: True Positive = 1811, False Positive = 58, Precision = 0.969, Recall = 0.986, F-Score = 0.977
+Threshold >= 0.3: True Positive = 1809, False Positive = 43, Precision = 0.977, Recall = 0.985, F-Score = 0.981
+Threshold >= 0.4: True Positive = 1803, False Positive = 36, Precision = 0.980, Recall = 0.981, F-Score = 0.981
+Threshold >= 0.5: True Positive = 1802, False Positive = 32, Precision = 0.983, Recall = 0.981, F-Score = 0.982
+Threshold >= 0.6: True Positive = 1792, False Positive = 23, Precision = 0.987, Recall = 0.976, F-Score = 0.981
+Threshold >= 0.7: True Positive = 1785, False Positive = 16, Precision = 0.991, Recall = 0.972, F-Score = 0.981
+Threshold >= 0.8: True Positive = 1776, False Positive = 11, Precision = 0.994, Recall = 0.967, F-Score = 0.980
+Threshold >= 0.9: True Positive = 1676, False Positive = 3, Precision = 0.998, Recall = 0.912, F-Score = 0.953
 ```
 </details>
 
