@@ -165,19 +165,7 @@ governance_proposal_spam_likelihood.csv
 
 Total spam/ham: 27982
 
-```
-
-
-## Model Eval 
-
-```
-Test results on train=test dataset.
-```
-F-Score = 0.988
-```
-To evaluate the selected features we evaluate them on the train/test dataset with split ratio of 80%/20%.
-```
-F-Score = 0.955
+``` 
 
 
 Feel free to evaluate your own features 'hard-coded' or topic classes and find out if you can improve the model.     
