@@ -8,7 +8,8 @@ use smartcore::ensemble::random_forest_regressor::RandomForestRegressor;
 use std::sync::Arc;
 use std::sync::Mutex;
 
-use std::fs;
+use std::{fs, thread};
+use std::time::Duration;
 
 use importance::*;
 use importance::score::*;
@@ -16,53 +17,83 @@ use smartcore::math::distance::euclidian::Euclidian;
 use smartcore::neighbors::knn_regressor::KNNRegressor;
 
 pub mod deep_learning;
-
 lazy_static::lazy_static! {
-        static ref PREDICTOR_POOL: Arc<Mutex<Vec<(String,Arc<Mutex<RandomForestRegressor<f64>>>)>>> = {
-            let mut pool = Vec::new();
-            Arc::new(Mutex::new(pool))
-        };
-    }
+    static ref PREDICTOR_POOL: Arc<Mutex<Vec<(String, Arc<Mutex<Box<dyn Model>>>)>>>
+        = Arc::new(Mutex::new(Vec::new()));
+}
 
+pub enum ModelType {
+    RandomForest,
+    KNN,
+}
 
 pub struct ClassificationMockModel {
-    pub label: String
+    pub label: String,
+    pub model_type: ModelType,
 }
+
+struct RandomForestRegressorModel(RandomForestRegressor<f64>);
+struct KNNRegressorModel(KNNRegressor<f64,Euclidian>);
+
+impl Model for RandomForestRegressorModel {
+    fn predict(&self, x: &Vec<Vec<f64>>) -> Vec<f64> {
+        let x = DenseMatrix::from_2d_array(&x.iter().map(|x| &x[..]).collect::<Vec<&[f64]>>()[..]);
+        self.0.predict(&x).unwrap()
+    }
+}
+impl Model for KNNRegressorModel {
+    fn predict(&self, x: &Vec<Vec<f64>>) -> Vec<f64> {
+        let x = DenseMatrix::from_2d_array(&x.iter().map(|x| &x[..]).collect::<Vec<&[f64]>>()[..]);
+        self.0.predict(&x).unwrap()
+    }
+}
+
 
 impl Model for ClassificationMockModel {
     fn predict(&self, x: &Vec<Vec<f64>>) -> Vec<f64> {
-        let x = DenseMatrix::from_2d_array(&x.iter().map(|x| &x[..]).collect::<Vec<&[f64]>>()[..]);
-        let predictor = get_model(&self.label).expect("Failed to get a predictor from the pool.");
+        let predictor = get_model(&self.label, &self.model_type).expect("Failed to get a predictor from the pool.");
         let model = predictor.lock().unwrap();
-        model.predict(&x).unwrap()
+        model.predict(&x)
     }
 }
 
 
-fn get_model(label: &String) -> anyhow::Result<Arc<Mutex<RandomForestRegressor<f64>>>> {
-
+fn get_model(label: &String, model_type: &ModelType) -> anyhow::Result<Arc<Mutex<Box<dyn Model>>>> {
     let mut pool = PREDICTOR_POOL.lock().unwrap();
 
     // Check if any predictor is available in the pool
-    if let Some((_,predictor)) = pool.iter().find(|(l,p)| l==label && !p.try_lock().is_err()) {
+    if let Some((_, predictor)) = pool.iter().find(|(l, p)| l == label && !p.try_lock().is_err()) {
         return Ok(Arc::clone(predictor));
     }
 
     // If all predictors are in use, wait until one becomes available
     while pool.len() >= 100 {
-        std::thread::sleep(std::time::Duration::from_millis(100));
-        if let Some((_,predictor)) = pool.iter().find(|(l,p)| l==label && !p.try_lock().is_err()) {
+        thread::sleep(Duration::from_millis(100));
+        if let Some((_, predictor)) = pool.iter().find(|(l, p)| l == label && !p.try_lock().is_err()) {
             return Ok(Arc::clone(predictor));
         }
     }
 
     // Create a new predictor and add it to the pool
-    let model: RandomForestRegressor<f64> = match serde_json::from_str(&fs::read_to_string(label)?)? {
-        Some(lr) => { lr },
-        None => { return Err(anyhow::anyhow!(format!("Error: unable to load '{}'",label)));}
+    let new_predictor: Box<dyn Model> = match model_type {
+        ModelType::RandomForest => {
+            let model: RandomForestRegressor<f64> = match serde_json::from_str(&fs::read_to_string(label)?)? {
+                Some(lr) => lr,
+                None => return Err(anyhow::anyhow!(format!("Error: unable to load '{}'", label))),
+            };
+            Box::new(RandomForestRegressorModel(model))
+        }
+        ModelType::KNN => {
+            let model: KNNRegressor<f64,Euclidian> = match serde_json::from_str(&fs::read_to_string(label)?)? {
+                Some(lr) => { lr },
+                None => { return Err(anyhow::anyhow!(format!("Error: unable to load '{}'",label)));}
+            };
+            Box::new(KNNRegressorModel(model))
+        }
     };
-    let new_predictor = Arc::new(Mutex::new(model));
-    pool.push((label.to_owned(),Arc::clone(&new_predictor)));
+
+    let new_predictor = Arc::new(Mutex::new(new_predictor));
+    pool.push((label.to_owned(), Arc::clone(&new_predictor)));
 
     Ok(new_predictor)
 }
@@ -70,7 +101,7 @@ fn get_model(label: &String) -> anyhow::Result<Arc<Mutex<RandomForestRegressor<f
 pub fn predict(x_dataset: &Vec<Vec<f64>>) ->  anyhow::Result<Vec<f64>> {
 
     let model = ClassificationMockModel {
-        label: "./RandomForestRegressor.bin".to_string(),
+        label: "./RandomForestRegressor.bin".to_string(), model_type: ModelType::RandomForest
     };
 
     Ok(model.predict(x_dataset))
@@ -136,7 +167,7 @@ pub fn update_regression_model(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>) 
 pub fn test_regression_model(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f64>) -> anyhow::Result<()> {
 
     let model = ClassificationMockModel {
-        label: "./RandomForestRegressor.bin".to_string(),
+        label: "./RandomForestRegressor.bin".to_string(), model_type: ModelType::RandomForest
     };
     let y_hat = model.predict(x_dataset);
 
@@ -168,6 +199,7 @@ pub fn feature_importance(x_dataset_shuffled: &Vec<Vec<f64>>, y_dataset_shuffled
 
     let model = ClassificationMockModel {
         label: "./RandomForestRegressor.bin".to_string(),
+        model_type: ModelType::RandomForest
     };
 
     let opts = Opts {

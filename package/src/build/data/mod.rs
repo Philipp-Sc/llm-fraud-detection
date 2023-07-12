@@ -81,28 +81,37 @@ pub fn read_datasets_and_shuffle(paths: &[&str], shuffled_idx: &Vec<usize>) -> a
 
 pub fn create_dataset(paths: &[&str], shuffled_idx: &Vec<usize>, topic_selection: &Vec<String>, embeddings: bool, custom_features: bool, topics: bool, latent_variables: bool) -> anyhow::Result<(Vec<Vec<f64>>,Vec<f64>)> {
 
-    let (text_dataset, y_dataset) = sentiment::load_texts_from_file(paths)?;
+    let (mut text_dataset, y_dataset) = sentiment::load_texts_from_file(paths)?;
     assert_eq!(shuffled_idx.len(),text_dataset.len());
 
-    let (topics_dataset, y_data): (Vec<Vec<f64>>, Vec<f64>) = language_model::load_topics_from_file(paths, topic_selection)?;
+    let (mut topics_dataset, y_data): (Vec<Vec<f64>>, Vec<f64>) = language_model::load_topics_from_file(paths, topic_selection)?;
     assert_eq!(text_dataset.len(), topics_dataset.len());
     assert_eq!(y_dataset, y_data);
-    let (sentiment_dataset, y_data): (Vec<f64>, Vec<f64>) = sentiment::load_sentiments_from_file(paths)?;
+    let (mut sentiment_dataset, y_data): (Vec<f64>, Vec<f64>) = sentiment::load_sentiments_from_file(paths)?;
     assert_eq!(topics_dataset.len(), sentiment_dataset.len());
     assert_eq!(y_dataset, y_data);
 
-    let (embedding_dataset, y_data): (Vec<Vec<f64>>, Vec<f64>) = language_model::load_embeddings_from_file(paths)?;
+    let (mut embedding_dataset, y_data): (Vec<Vec<f64>>, Vec<f64>) = language_model::load_embeddings_from_file(paths)?;
     assert_eq!(embedding_dataset.len(), sentiment_dataset.len());
     assert_eq!(y_dataset, y_data);
 
 
     let mut x_dataset: Vec<Vec<f64>> = Vec::with_capacity(text_dataset.len());
     for i in 0..text_dataset.len(){
-        let mut tmp = Vec::new();
-
-        tmp.append(&mut get_features( &text_dataset[i].clone(), embedding_dataset[i].clone(), topics_dataset[i].clone(), sentiment_dataset[i].clone(), embeddings, custom_features, topics, latent_variables));
+        let tmp = get_features(
+             &text_dataset[i],
+            std::mem::take(&mut embedding_dataset[i]),
+            std::mem::take(&mut topics_dataset[i]),
+            std::mem::take(&mut sentiment_dataset[i]),
+            embeddings,
+            custom_features,
+            topics,
+            latent_variables,
+        );
         x_dataset.push(tmp);
     }
+
+
 
     // create an index array
     //let mut idx: Vec<usize> = (0..x_dataset.len()).collect();

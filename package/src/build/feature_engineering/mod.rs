@@ -3,7 +3,7 @@ use importance::score::Model;
 use words_count::WordsCount;
 use crate::build::classification::deep_learning::NNMockModel;
 use linkify::LinkFinder;
-use crate::build::classification::{ClassificationMockModel, predict_knn_regression_model};
+use crate::build::classification::{ClassificationMockModel, ModelType, predict_knn_regression_model};
 
 
 lazy_static::lazy_static! {
@@ -69,14 +69,16 @@ pub fn get_features(text: &String, text_embeddings: Vec<f64>, topic_predictions:
 
         features.append(&mut model.predict(&input));
         // RandomForest
-        let model = ClassificationMockModel { label: "./RandomForestRegressorTopicsAndCustomFeatures.bin".to_string()};
+        let model = ClassificationMockModel { label: "./RandomForestRegressorTopicsAndCustomFeatures.bin".to_string(), model_type: ModelType::RandomForest};
         features.append(&mut model.predict(&input));
 
         // KNN
+        // a problem, needs to be loaded in lazy_static.
         let mut input: Vec<Vec<f64>> = Vec::new();
         input.push(text_embeddings);
-        let mut knn_predictions = predict_knn_regression_model(&input).unwrap();
-        features.append(&mut knn_predictions);
+        let model = ClassificationMockModel { label: "./KNNRegressor.bin".to_string(), model_type: ModelType::KNN};
+        features.append(&mut model.predict(&input));
+
     }
 
     features

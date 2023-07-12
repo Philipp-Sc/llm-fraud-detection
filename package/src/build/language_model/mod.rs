@@ -58,13 +58,20 @@ pub fn get_fraud_indicators(all: bool) -> Vec<String> {
     }
 }
 
-pub fn get_embeddings(batch: &[&str]) -> anyhow::Result<Vec<Vec<f32>>> {
+pub fn get_embeddings(batch: &[&str]) -> anyhow::Result<Vec<Vec<f64>>> {
 
     let sentence_embeddings_model = SENTENCE_EMBEDDINGS_MODEL.try_lock().unwrap();
 
-    let output: Vec<Vec<f32>> = sentence_embeddings_model.encode(&batch)?;
+    let mut output: Vec<Vec<f32>> = sentence_embeddings_model.encode(&batch)?;
 
-    Ok(output)
+    let mut output_f64: Vec<Vec<f64>> = Vec::with_capacity(output.len());
+    for inner_vec in output {
+        let inner_vec_f64: Vec<f64> = inner_vec.iter().map(|&x| x as f64).collect();
+        output_f64.push(inner_vec_f64);
+    }
+
+
+    Ok(output_f64)
 
 }
 
