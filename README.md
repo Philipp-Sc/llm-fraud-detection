@@ -200,44 +200,50 @@ See more [feature_importance.json](https://github.com/Philipp-Sc/rust-bert-fraud
 
 ## Training Data
 Trained and tested with the following datasets:
-```rust
-enronSpamSubset, lingSpam, completeSpamAssassin, youtubeSpamCollection,smsspamcollection, governance_proposal_spam_likelihood.
+-  enronSpamSubset.csv
+-  lingSpam.csv
+-  completeSpamAssassin.csv
+-  youtubeSpamCollection.csv
+-  smsspamcollection.csv
+-  governance_proposal_spam_likelihood.csv
 
+```
 total: 27.982
 ---------------
 count spam: 9.012
 count ham: 18.970
+---------------
 ```
 <details>
-<summary> <b>Expand to display the full breakdown </b> </summary>
+<summary> <b>Expand to display the full dataset breakdown </b> </summary>
 
-```rust
-enronSpamSubset
+```
+enronSpamSubset.csv
 ---------------
 count spam: 5000
 count ham: 5000
 
-lingSpam
+lingSpam.csv
 ---------------
 count spam: 433
 count ham: 2172
 
-completeSpamAssassin
+completeSpamAssassin.csv
 ---------------
 count spam: 1560
 count ham: 3952
 
-youtubeSpamCollection
+youtubeSpamCollection.csv
 ---------------
 count spam: 1005
 count ham: 951
  
-smsspamcollection 
+smsspamcollection.csv
 ---------------
 count spam: 747
 count ham: 4825
 
-governance_proposal_spam_likelihood 
+governance_proposal_spam_likelihood.csv
 --------------- 
 count spam: ?
 count ham: ?
