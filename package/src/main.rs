@@ -161,7 +161,7 @@ fn naive_bayes_train_and_train_and_test_final_regression_model() -> anyhow::Resu
 
     let topic_selection = get_fraud_indicators(false);
 
-    let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&JSON_DATASET,&shuffled_idx, &topic_selection, false,false,false)?;
+    let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&JSON_DATASET,&shuffled_idx, &topic_selection, false,false,false,false)?;
 
     let (x_train, x_test) = split_vector(&x_dataset,0.8);
     let x_train = x_train.to_vec();
@@ -186,7 +186,7 @@ fn feature_selection(model: String) -> anyhow::Result<()> {
     let shuffled_idx = generate_shuffled_idx(&JSON_DATASET)?;
     let topic_selection = get_fraud_indicators(true);
 
-    let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&JSON_DATASET,&shuffled_idx, &topic_selection, false,false,false)?;
+    let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&JSON_DATASET,&shuffled_idx, &topic_selection, false,false,false,false)?;
 
     //let hard_coded_feature_labels = get_hard_coded_feature_labels();
     //let sentiment = "Sentiment".to_string();
@@ -218,7 +218,7 @@ fn train_and_test_final_model(eval: bool, model: String) -> anyhow::Result<()> {
     let topic_selection = get_n_best_fraud_indicators(30usize,&"feature_importance_random_forest_topics_only.json".to_string());
     //let topics = get_n_best_fraud_indicators(30usize,&"feature_importance_nn_topics_only.json".to_string());
 
-    let (mut x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&JSON_DATASET,&shuffled_idx, &topic_selection,false,false,true)?;
+    let (mut x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&JSON_DATASET,&shuffled_idx, &topic_selection,false,false,false,true)?;
 
     if model.as_str() == "nn" {
         let (z_dataset, mean, std_dev) = z_score_normalize(&x_dataset, None);

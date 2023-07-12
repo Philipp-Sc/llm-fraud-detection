@@ -36,9 +36,13 @@ pub fn get_hard_coded_feature_labels() -> Vec<String> {
     ].into_iter().map(|x| x.to_string()).collect()
 }
 
-pub fn get_features(text: &String, topic_predictions: Vec<f64>, sentiment_prediction: f64, custom_features: bool, topics: bool, latent_variables: bool) -> Vec<f64> {
+pub fn get_features(text: &String, text_embeddings: Vec<f64>, topic_predictions: Vec<f64>, sentiment_prediction: f64, embeddings: bool, custom_features: bool, topics: bool, latent_variables: bool) -> Vec<f64> {
 
     let mut features = Vec::new();
+
+    if embeddings {
+        features.append(&mut text_embeddings.clone());
+    }
 
     if topics {
         // Topics

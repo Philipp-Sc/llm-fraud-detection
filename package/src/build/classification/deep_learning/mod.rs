@@ -168,8 +168,9 @@ impl Predictor {
     }
 
     pub fn load(&mut self, path: &Path) -> tch::Result<()> {
+        let device = tch::Device::cuda_if_available();
         // Load the tensors
-        let named_tensors = tch::Tensor::load_multi(path)?;
+        let named_tensors = tch::Tensor::load_multi_with_device(path,device)?;
 
         // Assign the tensors to the corresponding fields
         for (name, tensor) in named_tensors {

@@ -79,7 +79,7 @@ pub fn read_datasets_and_shuffle(paths: &[&str], shuffled_idx: &Vec<usize>) -> a
 }
 
 
-pub fn create_dataset(paths: &[&str], shuffled_idx: &Vec<usize>, topic_selection: &Vec<String>, custom_features: bool, topics: bool, latent_variables: bool) -> anyhow::Result<(Vec<Vec<f64>>,Vec<f64>)> {
+pub fn create_dataset(paths: &[&str], shuffled_idx: &Vec<usize>, topic_selection: &Vec<String>, embeddings: bool, custom_features: bool, topics: bool, latent_variables: bool) -> anyhow::Result<(Vec<Vec<f64>>,Vec<f64>)> {
 
     let (text_dataset, y_dataset) = sentiment::load_texts_from_file(paths)?;
     assert_eq!(shuffled_idx.len(),text_dataset.len());
@@ -91,11 +91,16 @@ pub fn create_dataset(paths: &[&str], shuffled_idx: &Vec<usize>, topic_selection
     assert_eq!(topics_dataset.len(), sentiment_dataset.len());
     assert_eq!(y_dataset, y_data);
 
+    let (embedding_dataset, y_data): (Vec<Vec<f64>>, Vec<f64>) = language_model::load_embeddings_from_file(paths)?;
+    assert_eq!(embedding_dataset.len(), sentiment_dataset.len());
+    assert_eq!(y_dataset, y_data);
+
 
     let mut x_dataset: Vec<Vec<f64>> = Vec::with_capacity(text_dataset.len());
     for i in 0..text_dataset.len(){
         let mut tmp = Vec::new();
-        tmp.append(&mut get_features(&text_dataset[i].clone(), topics_dataset[i].clone(), sentiment_dataset[i].clone(), custom_features, topics, latent_variables));
+
+        tmp.append(&mut get_features( &text_dataset[i].clone(), embedding_dataset[i].clone(), topics_dataset[i].clone(), sentiment_dataset[i].clone(), embeddings, custom_features, topics, latent_variables));
         x_dataset.push(tmp);
     }
 

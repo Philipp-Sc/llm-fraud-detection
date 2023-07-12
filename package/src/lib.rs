@@ -29,7 +29,8 @@ pub fn fraud_probabilities(texts: &[&str]/*, topics: &[&str]*/) ->  anyhow::Resu
         let text = texts[i].to_owned();
 
         let mut tmp = Vec::new();
-        tmp.append(&mut get_features(&text, topics_dataset[i].clone(), sentiment_dataset[i].clone(), custom_features, topics, latent_variables));
+        let text_embeddings: Vec<f64> = vec![];
+        tmp.append(&mut get_features( &text,text_embeddings, topics_dataset[i].clone(), sentiment_dataset[i].clone(), false,custom_features, topics, latent_variables));
         input.push(tmp);
 
     }
