@@ -20,6 +20,8 @@ pub fn fraud_probabilities(texts: &[&str]/*, topics: &[&str]*/) ->  anyhow::Resu
     assert_eq!(texts.len(), topics_dataset.len());
     let sentiment_dataset = build::sentiment::get_sentiments(texts);
     assert_eq!(topics_dataset.len(), sentiment_dataset.len());
+    let text_embeddings: Vec<Vec<f32>> = build::language_model::get_embeddings(texts)?;
+    assert_eq!(texts.len(), text_embeddings.len());
 
 
     let mut input: Vec<Vec<f64>> = Vec::with_capacity(texts.len());
@@ -29,8 +31,7 @@ pub fn fraud_probabilities(texts: &[&str]/*, topics: &[&str]*/) ->  anyhow::Resu
         let text = texts[i].to_owned();
 
         let mut tmp = Vec::new();
-        let text_embeddings: Vec<f64> = vec![];
-        tmp.append(&mut get_features( &text,text_embeddings, topics_dataset[i].clone(), sentiment_dataset[i].clone(), false,custom_features, topics, latent_variables));
+        tmp.append(&mut get_features( &text,text_embeddings[i].clone().into_iter().map(|x| x as f64).collect(), topics_dataset[i].clone(), sentiment_dataset[i].clone(), false,custom_features, topics, latent_variables));
         input.push(tmp);
 
     }

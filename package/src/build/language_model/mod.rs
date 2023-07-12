@@ -58,6 +58,16 @@ pub fn get_fraud_indicators(all: bool) -> Vec<String> {
     }
 }
 
+pub fn get_embeddings(batch: &[&str]) -> anyhow::Result<Vec<Vec<f32>>> {
+
+    let sentence_embeddings_model = SENTENCE_EMBEDDINGS_MODEL.try_lock().unwrap();
+
+    let output: Vec<Vec<f32>> = sentence_embeddings_model.encode(&batch)?;
+
+    Ok(output)
+
+}
+
 pub fn get_topic_predictions(batch: &[&str], topics: &[&str])  -> anyhow::Result<Vec<Vec<f64>>> {
 
         let sequence_classification_model = SEQUENCE_CLASSIFICATION_MODEL.try_lock().unwrap();
