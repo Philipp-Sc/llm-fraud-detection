@@ -103,6 +103,8 @@ fn main() -> anyhow::Result<()> {
         "train_and_test_final_model_random_forest" => {train_and_test_final_model(false,"random_forest".to_string());},
         "train_and_test_final_model_nn" => {train_and_test_final_model(false, "nn".to_string());},
         "train_and_test_final_model_nn_eval" => {train_and_test_final_model(true,"nn".to_string());},
+        "train_and_test_final_model_knn" => {train_and_test_final_model(false, "knn".to_string());},
+        "train_and_test_final_model_knn_eval" => {train_and_test_final_model(true,"knn".to_string());},
         "generate_feature_vectors" => {generate_feature_vectors();},
         "service" => {service();},
         "feature_selection_random_forest" => {feature_selection("random_forest".to_string());},
