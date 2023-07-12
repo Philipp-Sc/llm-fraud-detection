@@ -66,8 +66,8 @@ The fraud detection consists of a Random Forest Regressor and a set of predictor
 Naive Bayes classifier are well known for their effectiveness in text related tasks especially spam detection.  
 
 Two Naive Bayes classifiers have been trained on a Bag of Words representation of the spam/ham datasets.
-- [Categorical Naive Bayes classifier](https://docs.rs/smartcore/latest/smartcore/naive_bayes/categorical/struct.CategoricalNB.html) 
-- [Gaussian Naive Bayes classifier](https://docs.rs/crate/linfa-bayes/latest)
+- [Categorical Naive Bayes classifier](https://docs.rs/smartcore/latest/smartcore/naive_bayes/categorical/struct.CategoricalNB.html) **(F-Score = 0.870)** 
+- [Gaussian Naive Bayes classifier](https://docs.rs/crate/linfa-bayes/latest) **(F-Score = 0.859)**
 
 ### 2. Random Forest
 Performs exceptionally well when trained on the topic predictions, sentiment and custom features.
@@ -199,40 +199,52 @@ See more [feature_importance.json](https://github.com/Philipp-Sc/rust-bert-fraud
 # Evaluation
 
 ## Training Data
-Trained and tested with the following datasets.
+Trained and tested with the following datasets:
+```rust
+enronSpamSubset, lingSpam, completeSpamAssassin, youtubeSpamCollection,smsspamcollection, governance_proposal_spam_likelihood.
 
+total: 27.982
+---------------
+count spam: 9.012
+count ham: 18.970
 ```
-enronSpamSubset.csv
+<details>
+<summary> <b>Expand to display the full breakdown </b> </summary>
+
+```rust
+enronSpamSubset
 ---------------
 count spam: 5000
 count ham: 5000
 
-lingSpam.csv
+lingSpam
 ---------------
 count spam: 433
 count ham: 2172
 
-completeSpamAssassin.csv
+completeSpamAssassin
 ---------------
 count spam: 1560
 count ham: 3952
 
-youtubeSpamCollection.csv
+youtubeSpamCollection
 ---------------
 count spam: 1005
 count ham: 951
  
-smsspamcollection.csv 
+smsspamcollection 
 ---------------
 count spam: 747
 count ham: 4825
 
-governance_proposal_spam_likelihood.csv 
+governance_proposal_spam_likelihood 
 --------------- 
-
-Total spam/ham: 27982
-
+count spam: ?
+count ham: ?
 ``` 
+</details>
+
+
 
 
 Feel free to evaluate your own features 'hard-coded' or topic classes and find out if you can improve the model.     
