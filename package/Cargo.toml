@@ -39,6 +39,7 @@ rust-bert-fraud-detection-socket-ipc = {path = "../socket_ipc" }
 sled = { version = "0.34.7" }
 tch = {version ="0.13.0", features=["download-libtorch"]}
 linkify = "0.10.0"
+rayon = "1.7.0"
 
 [profile.release]
 # Enable link-time optimization, eliminates more code and inlines across crate boundaries.
