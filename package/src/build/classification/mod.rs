@@ -16,6 +16,9 @@ use importance::score::*;
 use smartcore::math::distance::euclidian::Euclidian;
 use smartcore::neighbors::knn_regressor::KNNRegressor;
 
+use smartcore::neighbors::KNNWeightFunction;
+
+
 pub mod deep_learning;
 lazy_static::lazy_static! {
     static ref PREDICTOR_POOL: Arc<Mutex<Vec<(String, Arc<Mutex<Box<dyn Model>>>)>>>
@@ -113,7 +116,7 @@ pub fn update_knn_regression_model(x_dataset: &Vec<Vec<f64>>, y_dataset: &Vec<f6
     let y = y_dataset;
 
 
-    let regressor = KNNRegressor::fit(&x, &y, smartcore::neighbors::knn_regressor::KNNRegressorParameters::default()).unwrap();
+    let regressor = KNNRegressor::fit(&x, &y, smartcore::neighbors::knn_regressor::KNNRegressorParameters::default().with_k(3).with_weight(KNNWeightFunction::Distance)).unwrap();
     fs::write("./KNNRegressor.bin", &serde_json::to_string(&regressor)?).ok();
 
     Ok(())
