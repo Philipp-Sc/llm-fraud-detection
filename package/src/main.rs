@@ -1,24 +1,26 @@
-use std::thread;
-use std::time::Duration;
+use rust_bert_fraud_detection_tools::build::classification::Model;
+use rust_bert_fraud_detection_tools::build::classification::ClassificationMockModel;
+use rust_bert_fraud_detection_tools::build::classification::ModelType;
 
-use rust_bert_fraud_detection_tools::service::spawn_rust_bert_fraud_detection_socket_service;
+
 use std::env;
-use rust_bert_fraud_detection_socket_ipc::ipc::client_send_rust_bert_fraud_detection_request;
-use rust_bert_fraud_detection_tools::build::classification::feature_importance;
-use rust_bert_fraud_detection_tools::build::create_naive_bayes_model;
-use rust_bert_fraud_detection_tools::build::data::{generate_shuffled_idx, split_vector};
-use rust_bert_fraud_detection_tools::build::classification::deep_learning::{feature_importance_nn, get_new_nn, Predictor, z_score_normalize};
-use rust_bert_fraud_detection_tools::build::feature_engineering::get_hard_coded_feature_labels;
-use rust_bert_fraud_detection_tools::build::language_model::{get_fraud_indicators, get_n_best_fraud_indicators, load_embeddings_from_file};
+use rust_bert_fraud_detection_tools::build::data::{generate_shuffled_idx, split_vector, DatasetKind};
 
+use rayon::iter::IntoParallelIterator;
+use rayon::iter::ParallelIterator;
+
+use rust_bert_fraud_detection_tools::build::language_model::zero_shot_classification::huggingface_transformers_extract_topics;
+use rust_bert_fraud_detection_tools::build::language_model::zero_shot_classification::huggingface_transformers_predict_multilabel;
+//use pyo3::prelude::*;
+//use std::io::BufRead;
 
 const JSON_DATASET: [&str;6] = [
-    "data_gen_v5_(youtubeSpamCollection).json",
-    "data_gen_v5_(enronSpamSubset).json",
-    "data_gen_v5_(lingSpam).json",
-    "data_gen_v5_(smsspamcollection).json",
-    "data_gen_v5_(completeSpamAssassin).json",
-    "data_gen_v5_(governance_proposal_spam_likelihood).json"
+    "data_gen_v7_(youtubeSpamCollection).json",
+    "data_gen_v7_(enronSpamSubset).json",
+    "data_gen_v7_(lingSpam).json",
+    "data_gen_v7_(smsspamcollection).json",
+    "data_gen_v7_(completeSpamAssassin).json",
+    "data_gen_v7_(governance_proposal_spam_likelihood).json"
 ];
 
 const CSV_DATASET: [&str;6] = [
@@ -31,59 +33,13 @@ const CSV_DATASET: [&str;6] = [
 ];
 
 pub const SENTENCES: [&str;6] = [
-    "You!!! Lose up to 19% weight. Special promotion on our new weightloss.",
+    "Lose up to 19% weight. Special promotion on our new weightloss.",
     "Hi Bob, can you send me your machine learning homework?",
     "Don't forget our special promotion: -30% on men shoes, only today!",
     "Hi Bob, don't forget our meeting today at 4pm.",
-    "According to tokenomics: [cosmos-network.io][1] stakers can receive an airdrop. Claim airdrop here: [cosmos-network.io][2] ( Valid until 10.08.2023 )\
-
-Snapshot: 01.06.2023
-
-Conditions: The minimum amount of each token is the equivalent of $200 at the time of the snapshot.
-
-Tokens are allocated in proportion to the balance of every blockchain address accessible during the snapshot time.
-
-Supported networks:
-
-•ATOM
-
-•OSMO
-
-•SCRT
-
-•STARS
-
-•EVMOS
-
-•JUNO",
+    "⚠️ FINAL: LAST TERRA PHOENIX AIRDROP 🌎 ✅ CLAIM NOW All participants in this vote will receive a reward..",
     "Social KYC oracle (TYC)  PFC is asking for 20k Luna to build a social KYC protocol.."
     ];
-
-
-// nn using topics
-// nn using hard_coded features
-
-// random forest with all features
-// nn with all features
-
-// linear regression or random forest of the above two models. potentially remove naive bayes from models and add to regression.
-
-// 1) generate_feature_vectors
-// 2) train_and_test_final_model
-// 3) feature_selection
-
-
-// To just test the fraud detection:
-//      sudo docker run -it --rm -v "$(pwd)/rustbert_cache":/usr/rustbert_cache -v "$(pwd)/target":/usr/target -v "$(pwd)/cargo_home":/usr/cargo_home -v "$(pwd)/package":/usr/workspace -v "$(pwd)/tmp":/usr/workspace/tmp -v "$(pwd)/socket_ipc":/usr/socket_ipc rust-bert-fraud-detection cargo run --release
-
-// Start service container:
-//      sudo docker run -d --rm -v "$(pwd)/rustbert_cache":/usr/rustbert_cache -v "$(pwd)/target":/usr/target -v "$(pwd)/cargo_home":/usr/cargo_home -v "$(pwd)/package":/usr/workspace -v "$(pwd)/tmp":/usr/workspace/tmp -v "$(pwd)/socket_ipc":/usr/socket_ipc rust-bert-fraud-detection cargo run --release start_service
-//      (To later stop the service container)
-//          sudo docker container ls
-//          sudo docker stop CONTAINER_ID
-// Run service test:
-//      sudo docker run -it --rm -v "$(pwd)/rustbert_cache":/usr/rustbert_cache -v "$(pwd)/target":/usr/target -v "$(pwd)/cargo_home":/usr/cargo_home -v "$(pwd)/package":/usr/workspace -v "$(pwd)/tmp":/usr/workspace/tmp -v "$(pwd)/socket_ipc":/usr/socket_ipc rust-bert-fraud-detection cargo run --release test_service
-
 
 fn main() -> anyhow::Result<()> {
     let args: Vec<String> = env::args().collect();
@@ -96,159 +52,79 @@ fn main() -> anyhow::Result<()> {
     let command = &args[1];
 
     match command.as_str() {
-        "naive_bayes_train_and_train_and_test_final_regression_model" => {naive_bayes_train_and_train_and_test_final_regression_model();},
-        "naive_bayes_train" => {naive_bayes_train();},
-        "naive_bayes_predict" => {naive_bayes_predict();},
-        "train_and_test_final_model_random_forest_eval" => {train_and_test_final_model(true,"random_forest".to_string());},
-        "train_and_test_final_model_random_forest" => {train_and_test_final_model(false,"random_forest".to_string());},
-        "train_and_test_final_model_nn" => {train_and_test_final_model(false, "nn".to_string());},
-        "train_and_test_final_model_nn_eval" => {train_and_test_final_model(true,"nn".to_string());},
-        "train_and_test_final_model_knn" => {train_and_test_final_model(false, "knn".to_string());},
-        "train_and_test_final_model_knn_eval" => {train_and_test_final_model(true,"knn".to_string());},
-        "generate_feature_vectors" => {generate_feature_vectors();},
-        "service" => {service();},
-        "feature_selection_random_forest" => {feature_selection("random_forest".to_string());},
-        "feature_selection_nn" => {feature_selection("nn".to_string());},
+        "test" => {test().unwrap();},
+        "train_and_test_text_embedding_knn_regressor" => {train_and_test_text_embedding_knn_regressor(false)?;},
+        "train_and_test_text_embedding_knn_regressor_eval" => {train_and_test_text_embedding_knn_regressor(true)?;},
 
+        "train_and_test_zero_shot_classification_random_forest_regressor" => {train_and_test_zero_shot_classification_random_forest_regressor(false)?;},
+        "train_and_test_zero_shot_classification_random_forest_regressor_eval" => {train_and_test_zero_shot_classification_random_forest_regressor(true)?;},
+
+        "train_and_test_other_features_random_forest_regressor" => {train_and_test_other_features_random_forest_regressor(false)?;},
+        "train_and_test_other_features_random_forest_regressor_eval" => {train_and_test_other_features_random_forest_regressor(true)?;},
+
+
+
+        "train_and_test_mixture_model" => {train_and_test_mixture_model(false)?;},
+        "train_and_test_mixture_model_eval" => {train_and_test_mixture_model(true)?;},
+        "generate_feature_vectors" => {generate_feature_vectors()?;},
+        "predict" => {let fraud_probabilities = rust_bert_fraud_detection_tools::fraud_probabilities(&SENTENCES)?;
+    println!("Predictions:\n{:?}",fraud_probabilities);
+    println!("Labels:\n[1.0, 0.0, 1.0, 0.0, 1.0, 0.0]");
+},
         _ => {panic!()}
     }
 
     Ok(())
 }
 
-fn service() -> anyhow::Result<()> {
 
-    let mut args: Vec<String> = env::args().collect();
-    args.reverse();
-    args.pop();
-    args.reverse();
-    println!("env::args().collect(): {:?}",args);
 
-    if args.len() <= 1 {
-        println!("{:?}", &SENTENCES);
-        let fraud_probabilities: Vec<f64> = rust_bert_fraud_detection_tools::fraud_probabilities(&SENTENCES)?;
-        println!("Predictions:\n{:?}", fraud_probabilities);
-        println!("Labels:\n[1.0, 0.0, 1.0, 0.0, 1.0, 0.0]");
+fn test() -> anyhow::Result<()> {
+    let topic_selection = rust_bert_fraud_detection_tools::build::language_model::zero_shot_classification::get_n_best_fraud_indicators(20usize,&"feature_importance_random_forest_topics_only.json".to_string());
+    huggingface_transformers_predict_multilabel(&topic_selection.iter().map(|x| x.as_str()).collect::<Vec<&str>>()[..],"Don't forget our special promotion: -30% on men shoes, only today!")?;
+
+/*
+pyo3::prepare_freethreaded_python();
+Python::with_gil(|py| {
+        println!("Downloading and loading models...");
+
+        let module = PyModule::from_code(
+            py,
+            include_str!("../huggingface.py"),
+            "huggingface.py",
+            "huggingface",
+        )?;
+
+        let extract_topics: Py<PyAny> = module.getattr("extract_topics")?.into();
+
+        println!("Done! Type a sentence and hit enter. To exit hold Ctrl+C and hit Enter");
+
+        let stdin = std::io::stdin();
+
+        for line in stdin.lock().lines() {
+            let Ok(text) = line else {
+                break;
+            };
+
+            let samples: Vec<f32> = extract_topics.call1(py, (["stress","sex","apple"],"text about sex",))?.extract(py)?;
+            dbg!(samples.len());
+        }
+
         Ok(())
-    }else{
-        match args[1].as_str() {
-            "start" => {
-                spawn_rust_bert_fraud_detection_socket_service("./tmp/rust_bert_fraud_detection_socket").join().unwrap();
-                Ok(())
-            },
-            "test" => {
-                let result = client_send_rust_bert_fraud_detection_request("./tmp/rust_bert_fraud_detection_socket",SENTENCES.iter().map(|x|x.to_string()).collect::<Vec<String>>())?;
-                println!("{:?}",result);
-                Ok(())
-            }
-            _ => {
-                println!("invalid command");
-                Ok(())
-            }
-        }
-    }
-}
-
-fn naive_bayes_train_and_train_and_test_final_regression_model() -> anyhow::Result<()> {
-
-    let shuffled_idx = generate_shuffled_idx(&JSON_DATASET)?;
-
-    let dataset = rust_bert_fraud_detection_tools::build::data::read_datasets_and_shuffle(&CSV_DATASET,&shuffled_idx)?;
-
-    let (train_dataset, test_dataset) = split_vector(&dataset,0.8);
-    let train_dataset = train_dataset.to_vec();
-    let test_dataset = test_dataset.to_vec();
-
-    create_naive_bayes_model(&train_dataset,&test_dataset)?;
-
-    let topic_selection = get_fraud_indicators(false);
-
-    let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&JSON_DATASET,&shuffled_idx, &topic_selection, false,false,false,false)?;
-
-    let (x_train, x_test) = split_vector(&x_dataset,0.8);
-    let x_train = x_train.to_vec();
-    let x_test = x_test.to_vec();
-    let (y_train, y_test) = split_vector(&y_dataset,0.8);
-    let y_train = y_train.to_vec();
-    let y_test = y_test.to_vec();
-
-    rust_bert_fraud_detection_tools::build::create_classification_model(&x_train,&y_train)?;
-    rust_bert_fraud_detection_tools::build::test_classification_model(&x_test,&y_test)?;
-
-    let fraud_probabilities = rust_bert_fraud_detection_tools::fraud_probabilities(&SENTENCES)?;
-    println!("Predictions:\n{:?}",fraud_probabilities);
-    println!("Labels:\n[1.0, 0.0, 1.0, 0.0, 1.0, 0.0]");
-    Ok(())
-
+    })
+*/
+Ok(())
 }
 
 
-fn feature_selection(model: String) -> anyhow::Result<()> {
-
-    let shuffled_idx = generate_shuffled_idx(&JSON_DATASET)?;
-//    let topic_selection = get_fraud_indicators(true);
-    let topic_selection = get_n_best_fraud_indicators(30usize,&"feature_importance_random_forest_topics_only.json".to_string());
-
-    let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&JSON_DATASET,&shuffled_idx, &topic_selection, false,false,false,true)?;
-
-    //let hard_coded_feature_labels = get_hard_coded_feature_labels();
-    //let sentiment = "Sentiment".to_string();
-
-    let feature_labels: Vec<String> = vec![vec!["1".to_string(),"2".to_string(),"3".to_string(),"4".to_string(),"5".to_string()]].into_iter().flatten().collect();
-
-    match model.as_str() {
-        "random_forest" => {
-            feature_importance(&x_dataset, &y_dataset, feature_labels)
-        },
-        "nn" => {
-            let (x_dataset, mean, std_dev) = z_score_normalize(&x_dataset, None);
-            feature_importance_nn(&x_dataset, &y_dataset, feature_labels)
-        }
-        _ => {
-            panic!()
-        }
-    }
-}
-
-
-
-
-fn train_and_test_final_model(eval: bool, model: String) -> anyhow::Result<()> {
-
+fn train_and_test_text_embedding_knn_regressor(eval: bool) -> anyhow::Result<()> {
     let shuffled_idx = generate_shuffled_idx(&JSON_DATASET)?;
 
-    //let topics = get_fraud_indicators(true);
-    let topic_selection = get_n_best_fraud_indicators(30usize,&"feature_importance_random_forest_topics_only.json".to_string());
-    //let topics = get_n_best_fraud_indicators(30usize,&"feature_importance_nn_topics_only.json".to_string());
-
-    let (mut x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(&JSON_DATASET,&shuffled_idx, &topic_selection,false,false,false,true)?;
-
-    if model.as_str() == "nn" {
-        let (z_dataset, mean, std_dev) = z_score_normalize(&x_dataset, None);
-        x_dataset = z_dataset;
-    }
+    let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(DatasetKind::Embedding, &JSON_DATASET,&shuffled_idx)?;
 
     if !eval {
-        match model.as_str() {
-            "knn" => {
                 rust_bert_fraud_detection_tools::build::classification::update_knn_regression_model(&x_dataset,&y_dataset)?;
                 rust_bert_fraud_detection_tools::build::classification::test_knn_regression_model(&x_dataset,&y_dataset)?;
-            }
-            "random_forest" => {
-                rust_bert_fraud_detection_tools::build::create_classification_model(&x_dataset,&y_dataset)?;
-                rust_bert_fraud_detection_tools::build::test_classification_model(&x_dataset,&y_dataset)?;            },
-            "nn" => {
-                let nn = rust_bert_fraud_detection_tools::build::classification::deep_learning::train_nn(&x_dataset,&y_dataset);
-                let path = std::path::Path::new("./NeuralNet.bin");
-                nn.save(path).unwrap();
-                let mut nn = get_new_nn(x_dataset[0].len() as i64);
-                nn.load(path).unwrap();
-                rust_bert_fraud_detection_tools::build::classification::deep_learning::test_nn(&nn,&x_dataset,&y_dataset);
-            }
-            _ => {
-                panic!()
-            }
-        }
     }else {
         let (x_train, x_test) = split_vector(&x_dataset, 0.8);
         let x_train = x_train.to_vec();
@@ -257,64 +133,133 @@ fn train_and_test_final_model(eval: bool, model: String) -> anyhow::Result<()> {
         let y_train = y_train.to_vec();
         let y_test = y_test.to_vec();
 
-        match model.as_str() {
-            "knn" => {
                 rust_bert_fraud_detection_tools::build::classification::update_knn_regression_model(&x_train,&y_train)?;
                 rust_bert_fraud_detection_tools::build::classification::test_knn_regression_model(&x_train,&y_train)?;
                 rust_bert_fraud_detection_tools::build::classification::test_knn_regression_model(&x_test,&y_test)?;
-            }
-            "random_forest" => {
-                rust_bert_fraud_detection_tools::build::create_classification_model(&x_train, &y_train)?;
-                rust_bert_fraud_detection_tools::build::test_classification_model(&x_train, &y_train)?;
-                rust_bert_fraud_detection_tools::build::test_classification_model(&x_test, &y_test)?;
-            },
-            "nn" => {
-                let nn = rust_bert_fraud_detection_tools::build::classification::deep_learning::train_nn(&x_train,&y_train);
-                rust_bert_fraud_detection_tools::build::classification::deep_learning::test_nn(&&nn,&x_train,&y_train);
-                rust_bert_fraud_detection_tools::build::classification::deep_learning::test_nn(&&nn,&x_test,&y_test);
-            }
-            _ => {
-                panic!()
-            }
-        }
     }
-    let fraud_probabilities = rust_bert_fraud_detection_tools::fraud_probabilities(&SENTENCES)?;
-    println!("Predictions:\n{:?}",fraud_probabilities);
-    println!("Labels:\n[1.0, 0.0, 1.0, 0.0, 1.0, 0.0]");
     Ok(())
 }
-
-
-fn naive_bayes_predict() -> anyhow::Result<()>{
-    let predictions = rust_bert_fraud_detection_tools::build::naive_bayes::categorical_nb_model_predict(SENTENCES.iter().map(|&s| s.to_string()).collect::<Vec<String>>())?;
-    println!("Predictions:\n{:?}",predictions);
-    println!("Labels:\n[1.0, 0.0, 1.0, 0.0, 1.0, 0.0]");
-    Ok(())
-}
-
-
-fn naive_bayes_train() -> anyhow::Result<()>{
-
-
+fn train_and_test_zero_shot_classification_random_forest_regressor(eval: bool) -> anyhow::Result<()> {
     let shuffled_idx = generate_shuffled_idx(&JSON_DATASET)?;
 
-    let dataset = rust_bert_fraud_detection_tools::build::data::read_datasets_and_shuffle(&CSV_DATASET[..],&shuffled_idx)?;
+    let topic_selection = rust_bert_fraud_detection_tools::build::language_model::zero_shot_classification::get_n_best_fraud_indicators(30usize,&"feature_importance_random_forest_topics_only.json".to_string());
 
-    let (train_dataset, test_dataset) = split_vector(&dataset,0.8);
-    let train_dataset = train_dataset.to_vec();
-    let test_dataset = test_dataset.to_vec();
+    let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(DatasetKind::ZeroShotClassification(topic_selection), &JSON_DATASET,&shuffled_idx)?;
 
-    create_naive_bayes_model(&train_dataset,&test_dataset)
+    let	path = "./Topic_RandomForestRegressor.bin";
 
-//    create_naive_bayes_model(&dataset,&dataset)
+    if !eval {
+              	rust_bert_fraud_detection_tools::build::classification::update_random_forest_regression_model(path, &x_dataset,&y_dataset)?;
+                rust_bert_fraud_detection_tools::build::classification::test_random_forest_regression_model(path, &x_dataset,&y_dataset)?;
+    }else {
+	let (x_train, x_test) = split_vector(&x_dataset, 0.8);
+        let x_train = x_train.to_vec();
+        let x_test = x_test.to_vec();
+        let (y_train, y_test) = split_vector(&y_dataset, 0.8);
+        let y_train = y_train.to_vec();
+        let y_test = y_test.to_vec();
+
+                rust_bert_fraud_detection_tools::build::classification::update_random_forest_regression_model(path, &x_train,&y_train)?;
+                rust_bert_fraud_detection_tools::build::classification::test_random_forest_regression_model(path, &x_train,&y_train)?;
+                rust_bert_fraud_detection_tools::build::classification::test_random_forest_regression_model(path, &x_test,&y_test)?;
+    }
+    Ok(())
 }
 
+fn train_and_test_other_features_random_forest_regressor(eval: bool) -> anyhow::Result<()> {
+    let shuffled_idx = generate_shuffled_idx(&JSON_DATASET)?;
+    
+    let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(DatasetKind::OtherFeatures, &JSON_DATASET,&shuffled_idx)?;
+
+    let path = "./OtherFeatures_RandomForestRegressor.bin";
+
+    if !eval {
+        rust_bert_fraud_detection_tools::build::classification::update_random_forest_regression_model(path, &x_dataset,&y_dataset)?;
+        rust_bert_fraud_detection_tools::build::classification::test_random_forest_regression_model(path, &x_dataset,&y_dataset)?;
+    }else {
+        let (x_train, x_test) = split_vector(&x_dataset, 0.8);
+        let x_train = x_train.to_vec();
+        let x_test = x_test.to_vec();
+        let (y_train, y_test) = split_vector(&y_dataset, 0.8);
+        let y_train = y_train.to_vec();
+        let y_test = y_test.to_vec();
+
+        rust_bert_fraud_detection_tools::build::classification::update_random_forest_regression_model(path, &x_train,&y_train)?;
+        rust_bert_fraud_detection_tools::build::classification::test_random_forest_regression_model(path, &x_train,&y_train)?;
+        rust_bert_fraud_detection_tools::build::classification::test_random_forest_regression_model(path, &x_test,&y_test)?;
+    }
+    Ok(())
+}
+
+fn train_and_test_mixture_model(eval: bool) -> anyhow::Result<()> {
+    let shuffled_idx = generate_shuffled_idx(&JSON_DATASET)?;
+
+    let topic_selection = rust_bert_fraud_detection_tools::build::language_model::zero_shot_classification::get_n_best_fraud_indicators(30usize,&"feature_importance_random_forest_topics_only.json".to_string());
+
+    let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(DatasetKind::ZeroShotClassification(topic_selection), &JSON_DATASET,&shuffled_idx)?;
+    let model = ClassificationMockModel { label: "./Topic_RandomForestRegressor.bin".to_string(), model_type: ModelType::RandomForest};
+    let x_dataset = x_dataset.into_par_iter().map(|vec| {
+         if vec.len()>0 {
+            model.predict(&vec![vec])
+         }else{
+            vec
+         }
+       }).collect::<Vec<Vec<f32>>>();
+
+    let (x_dataset2, y_dataset2) = rust_bert_fraud_detection_tools::build::data::create_dataset(DatasetKind::Embedding, &JSON_DATASET,&shuffled_idx)?;
+    assert_eq!(y_dataset,y_dataset2);
+    let model = ClassificationMockModel { label: "./KNNRegressor.bin".to_string(), model_type: ModelType::KNN};
+    let x_dataset2 = x_dataset2.into_par_iter().map(|vec| {
+         if vec.len()>0 {
+            model.predict(&vec![vec])
+       	 }else{
+       	    vec
+       	 }
+       }).collect::<Vec<Vec<f32>>>();
+
+    let x_dataset = rust_bert_fraud_detection_tools::build::data::merge_datasets(x_dataset,x_dataset2)?.into_iter().filter(|x| x.len()>0).collect();
+
+/*
+    let (x_dataset3, y_dataset3) = rust_bert_fraud_detection_tools::build::data::create_dataset(DatasetKind::OtherFeatures, &JSON_DATASET,&shuffled_idx)?;
+    assert_eq!(y_dataset,y_dataset3);
+    let model = ClassificationMockModel { label: "./OtherFeatures_RandomForestRegressor.bin".to_string(), model_type: ModelType::RandomForest};
+    let x_dataset3 = x_dataset3.into_par_iter().map(|vec| {
+         if vec.len()>0 {
+            model.predict(&vec![vec])
+         }else{
+            vec
+         }
+       }).collect::<Vec<Vec<f32>>>();
+
+    let x_dataset = rust_bert_fraud_detection_tools::build::data::merge_datasets(x_dataset,x_dataset3)?.into_iter().filter(|x| x.len()>0).collect();
+*/   
+/*
+      let (x_dataset4, y_dataset4) = rust_bert_fraud_detection_tools::build::data::create_dataset(DatasetKind::Sentiment, &JSON_DATASET,&shuffled_idx)?;
+      assert_eq!(y_dataset,y_dataset4);
+
+      let x_dataset = rust_bert_fraud_detection_tools::build::data::merge_datasets(x_dataset,x_dataset4)?.into_iter().filter(|x| x.len()>0).collect();
+*/
+    let path = "./MixtureModel_RandomForestRegressor.bin";
+    if !eval {
+                rust_bert_fraud_detection_tools::build::classification::update_random_forest_regression_model(path, &x_dataset,&y_dataset)?;
+                rust_bert_fraud_detection_tools::build::classification::test_random_forest_regression_model(path, &x_dataset,&y_dataset)?;
+    }else {
+        let (x_train, x_test) = split_vector(&x_dataset, 0.8);
+        let x_train = x_train.to_vec();
+        let x_test = x_test.to_vec();
+        let (y_train, y_test) = split_vector(&y_dataset, 0.8);
+        let y_train = y_train.to_vec();
+        let y_test = y_test.to_vec();
+
+                rust_bert_fraud_detection_tools::build::classification::update_random_forest_regression_model(path, &x_train,&y_train)?;
+                rust_bert_fraud_detection_tools::build::classification::test_random_forest_regression_model(path, &x_train,&y_train)?;
+                rust_bert_fraud_detection_tools::build::classification::test_random_forest_regression_model(path, &x_test,&y_test)?;
+    }
+    Ok(())
+}
+
+
 fn generate_feature_vectors() -> anyhow::Result<()> {
-
-    // test governance spam ham
-    // let training_data_path = "new_data_gen_v5_(governance_proposal_spam_likelihood).json";
-    // rust_bert_fraud_detection_tools::build::create_training_data(vec!["./dataset/governance_proposal_spam_likelihood.csv"],training_data_path)?;
-
 
     for dataset in JSON_DATASET.into_iter().zip(CSV_DATASET) {
         let training_data_path = dataset.0.to_string();
