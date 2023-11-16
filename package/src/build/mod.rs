@@ -49,6 +49,14 @@ pub fn create_training_data(dataset_paths: Vec<&str>,topics_output_path: &str) -
     topic_selection.push("not urgent".to_string());
     topic_selection.push("benevolent".to_string());
     topic_selection.push("not benevolent".to_string());
+    topic_selection.push("narcissistic".to_string());
+    topic_selection.push("not narcissistic".to_string());
+    topic_selection.push("machiavellian".to_string());
+    topic_selection.push("not machiavellian".to_string());
+    topic_selection.push("psychopathic".to_string());
+    topic_selection.push("not psychopathic".to_string());
+
+
 
 
     language_model::zero_shot_classification::huggingface_transformers_extract_topics(&dataset_view, &topic_selection.iter().map(|x| x.as_str()).collect::<Vec<&str>>()[..], Some(format!("language_model_extract_topics_{}",topics_output_path)))?;
