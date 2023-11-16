@@ -186,9 +186,9 @@ pub fn huggingface_transformers_extract_topics(dataset: &Vec<(&str,&f32)>, topic
 }
 
 pub fn huggingface_transformers_predict_multilabel(topics: &[&str], text: &str) -> Result<Vec<f32>, io::Error> {
-    let output = Command::new("/usr/workspace/extract_topics.sh")
+    let output = Command::new("./extract_topics.sh")
         .args(&[&topics.join(","), text])
-        .stderr(std::process::Stdio::null())
+//        .stderr(std::process::Stdio::null())
         .spawn()?
         .wait_with_output()?;
 
