@@ -36,9 +36,20 @@ pub fn create_training_data(dataset_paths: Vec<&str>,topics_output_path: &str) -
     //language_model::embeddings::extract_embeddings(&dataset_view, Some(format!("language_model_extract_embeddings_{}",topics_output_path)))?;
     let mut topic_selection: Vec<String> = language_model::zero_shot_classification::get_n_best_fraud_indicators(100usize,&"feature_importance_random_forest_topics_only.json".to_string());
     topic_selection.push("spam".to_string());
+    topic_selection.push("not spam".to_string());
+    topic_selection.push("fraud".to_string());
+    topic_selection.push("not fraud".to_string());
+    topic_selection.push("phishing".to_string());
+    topic_selection.push("not phishing".to_string());
+    topic_selection.push("scam".to_string());
+    topic_selection.push("not scam".to_string());
+    topic_selection.push("manipulative".to_string());
+    topic_selection.push("not manipulative".to_string());
+    topic_selection.push("urgent".to_string());
+    topic_selection.push("not urgent".to_string());
+    topic_selection.push("benevolent".to_string());
+    topic_selection.push("not benevolent".to_string());
 
-    let mut inverse_topic_selection: Vec<String> = topic_selection.iter().map(|entry| format!("not {}", entry)).collect();
-    topic_selection.append(&mut inverse_topic_selection);
 
     language_model::zero_shot_classification::huggingface_transformers_extract_topics(&dataset_view, &topic_selection.iter().map(|x| x.as_str()).collect::<Vec<&str>>()[..], Some(format!("language_model_extract_topics_{}",topics_output_path)))?;
     Ok(())
