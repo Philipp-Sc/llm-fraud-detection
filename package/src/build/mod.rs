@@ -9,7 +9,7 @@ pub mod language_model;
 use data::read_datasets;
 
 
-pub fn create_training_data(dataset_paths: Vec<&str>,topics_output_path: &str) -> anyhow::Result<()> {
+pub async fn create_training_data(dataset_paths: Vec<&str>,topics_output_path: &str) -> anyhow::Result<()> {
 
     let dataset: Vec<(String,f32)> = read_datasets(&dataset_paths)?;
 
@@ -59,6 +59,6 @@ pub fn create_training_data(dataset_paths: Vec<&str>,topics_output_path: &str) -
 
 
 
-    language_model::zero_shot_classification::huggingface_transformers_extract_topics(&dataset_view, &topic_selection.iter().map(|x| x.as_str()).collect::<Vec<&str>>()[..], Some(format!("language_model_extract_topics_{}",topics_output_path)))?;
+    language_model::zero_shot_classification::huggingface_transformers_extract_topics(&dataset_view, &topic_selection.iter().map(|x| x.as_str()).collect::<Vec<&str>>()[..], Some(format!("language_model_extract_topics_{}",topics_output_path))).await?;
     Ok(())
 }

@@ -1,7 +1,6 @@
-use rust_bert_fraud_detection_tools::build::classification::Model;
 use rust_bert_fraud_detection_tools::build::classification::ClassificationMockModel;
 use rust_bert_fraud_detection_tools::build::classification::ModelType;
-
+use importance::score::Model;
 
 use std::env;
 use rust_bert_fraud_detection_tools::build::data::{generate_shuffled_idx, split_vector, DatasetKind};
@@ -9,27 +8,27 @@ use rust_bert_fraud_detection_tools::build::data::{generate_shuffled_idx, split_
 use rayon::iter::IntoParallelIterator;
 use rayon::iter::ParallelIterator;
 
-use rust_bert_fraud_detection_tools::build::language_model::zero_shot_classification::huggingface_transformers_extract_topics;
-use rust_bert_fraud_detection_tools::build::language_model::zero_shot_classification::huggingface_transformers_predict_multilabel;
+use rust_bert_fraud_detection_tools::build::language_model::zero_shot_classification::huggingface_transformers_single_predict_multilabel;
+use rust_bert_fraud_detection_tools::build::classification::feature_importance;
 //use pyo3::prelude::*;
 //use std::io::BufRead;
 
-const JSON_DATASET: [&str;6] = [
+const JSON_DATASET: [&str;4] = [
     "data_gen_v7_(youtubeSpamCollection).json",
     "data_gen_v7_(enronSpamSubset).json",
     "data_gen_v7_(lingSpam).json",
     "data_gen_v7_(smsspamcollection).json",
-    "data_gen_v7_(completeSpamAssassin).json",
-    "data_gen_v7_(governance_proposal_spam_likelihood).json"
+//    "data_gen_v7_(completeSpamAssassin).json",
+//    "data_gen_v7_(governance_proposal_spam_likelihood).json"
 ];
 
-const CSV_DATASET: [&str;6] = [
+const CSV_DATASET: [&str;4] = [
     "./dataset/youtubeSpamCollection.csv",
     "./dataset/enronSpamSubset.csv",
     "./dataset/lingSpam.csv",
     "./dataset/smsspamcollection.csv",
-    "./dataset/completeSpamAssassin.csv",
-    "./dataset/governance_proposal_spam_likelihood.csv"
+//    "./dataset/completeSpamAssassin.csv",
+//    "./dataset/governance_proposal_spam_likelihood.csv"
 ];
 
 pub const SENTENCES: [&str;6] = [
@@ -40,8 +39,8 @@ pub const SENTENCES: [&str;6] = [
     "⚠️ FINAL: LAST TERRA PHOENIX AIRDROP 🌎 ✅ CLAIM NOW All participants in this vote will receive a reward..",
     "Social KYC oracle (TYC)  PFC is asking for 20k Luna to build a social KYC protocol.."
     ];
-
-fn main() -> anyhow::Result<()> {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     let args: Vec<String> = env::args().collect();
 
     if args.len() <= 1 {
@@ -66,7 +65,8 @@ fn main() -> anyhow::Result<()> {
 
         "train_and_test_mixture_model" => {train_and_test_mixture_model(false)?;},
         "train_and_test_mixture_model_eval" => {train_and_test_mixture_model(true)?;},
-        "generate_feature_vectors" => {generate_feature_vectors()?;},
+        "generate_feature_vectors" => {generate_feature_vectors().await?;},
+        "feature_selection" => { feature_selection("./Topic_RandomForestRegressor.bin".to_string())?;}
         "predict" => {let fraud_probabilities = rust_bert_fraud_detection_tools::fraud_probabilities(&SENTENCES)?;
     println!("Predictions:\n{:?}",fraud_probabilities);
     println!("Labels:\n[1.0, 0.0, 1.0, 0.0, 1.0, 0.0]");
@@ -81,7 +81,7 @@ fn main() -> anyhow::Result<()> {
 
 fn test() -> anyhow::Result<()> {
     let topic_selection = rust_bert_fraud_detection_tools::build::language_model::zero_shot_classification::get_n_best_fraud_indicators(20usize,&"feature_importance_random_forest_topics_only.json".to_string());
-    huggingface_transformers_predict_multilabel(&topic_selection.iter().map(|x| x.as_str()).collect::<Vec<&str>>()[..],"Don't forget our special promotion: -30% on men shoes, only today!")?;
+    huggingface_transformers_single_predict_multilabel(&topic_selection.iter().map(|x| x.as_str()).collect::<Vec<&str>>()[..],"Don't forget our special promotion: -30% on men shoes, only today!")?;
 
 /*
 pyo3::prepare_freethreaded_python();
@@ -259,16 +259,50 @@ fn train_and_test_mixture_model(eval: bool) -> anyhow::Result<()> {
 }
 
 
-fn generate_feature_vectors() -> anyhow::Result<()> {
+async fn generate_feature_vectors() -> anyhow::Result<()> {
 
     for dataset in JSON_DATASET.into_iter().zip(CSV_DATASET) {
         let training_data_path = dataset.0.to_string();
         let dataset_path = dataset.1.to_string();
 
-        rust_bert_fraud_detection_tools::build::create_training_data(vec![&dataset_path],&training_data_path)?;
+        rust_bert_fraud_detection_tools::build::create_training_data(vec![&dataset_path],&training_data_path).await?;
     }
 
 
     return Ok(());
 
+}
+
+fn feature_selection(model: String) -> anyhow::Result<()> {
+
+    let shuffled_idx = generate_shuffled_idx(&JSON_DATASET)?;
+
+    let mut topic_selection: Vec<String> = rust_bert_fraud_detection_tools::build::language_model::zero_shot_classification::get_n_best_fraud_indicators(100usize,&"feature_importance_random_forest_topics_only.json".to_string());
+    topic_selection.push("spam".to_string());
+    topic_selection.push("not spam".to_string());
+    topic_selection.push("fraud".to_string());
+    topic_selection.push("not fraud".to_string());
+    topic_selection.push("phishing".to_string());
+    topic_selection.push("not phishing".to_string());
+    topic_selection.push("scam".to_string());
+    topic_selection.push("not scam".to_string());
+    topic_selection.push("manipulative".to_string());
+    topic_selection.push("not manipulative".to_string());
+    topic_selection.push("urgent".to_string());
+    topic_selection.push("not urgent".to_string());
+    topic_selection.push("benevolent".to_string());
+    topic_selection.push("not benevolent".to_string());
+    topic_selection.push("narcissistic".to_string());
+    topic_selection.push("not narcissistic".to_string());
+    topic_selection.push("machiavellian".to_string());
+    topic_selection.push("not machiavellian".to_string());
+    topic_selection.push("psychopathic".to_string());
+    topic_selection.push("not psychopathic".to_string());
+
+    let (x_dataset, y_dataset) = rust_bert_fraud_detection_tools::build::data::create_dataset(DatasetKind::ZeroShotClassification(topic_selection.clone()), &JSON_DATASET,&shuffled_idx)?;
+ 
+
+ 
+    feature_importance(&x_dataset, &y_dataset, topic_selection, &model)
+      
 }

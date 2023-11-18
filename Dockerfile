@@ -2,15 +2,15 @@
 FROM rust:latest
 
 
-RUN apt-get update && apt-get -y install openssl libclang-dev python3-dev python3-pip python3 python3-venv
+RUN apt-get update && apt-get -y install openssl libclang-dev python3-dev python3-pip python3 python3-venv pipx
 
 RUN mkdir /usr/target
 
 RUN cd /usr; git clone https://github.com/ggerganov/llama.cpp.git; cd llama.cpp;make;
 
-RUN pip install 'transformers[torch]'
+RUN pipx install 'transformers[torch]'
 #RUN pip install 'transformers[tf-cpu]'
-RUN pip install joblib
+RUN pipx install joblib
 
 
 WORKDIR /usr/workspace

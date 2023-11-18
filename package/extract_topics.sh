@@ -2,7 +2,7 @@
 
 # Check if the required arguments are provided
 if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 <topics> <text>"
+    echo "Usage: $0 <topics> <text_file_path>"
     exit 1
 fi
 

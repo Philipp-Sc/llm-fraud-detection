@@ -14,10 +14,14 @@ use rust_bert::pipelines::sentence_embeddings::{SentenceEmbeddingsModel, Sentenc
 use rust_bert::pipelines::sentence_embeddings::SentenceEmbeddingsBuilder; 
 
 use std::process::Command;
-use std::io::{self};
+use tokio::sync::Semaphore;
+use tokio::task::JoinSet;
 
+use std::io::{self, Write};
+use tempfile::NamedTempFile;
 
 lazy_static::lazy_static! {
+        static ref CPU_PERMIT: Arc<Semaphore> = Arc::new(Semaphore::new(1));
         //    Set-up model
         static ref SEQUENCE_CLASSIFICATION_MODEL: Arc<Mutex<ZeroShotClassificationModel>> = Arc::new(Mutex::new(ZeroShotClassificationModel::new(Default::default()).unwrap()));
         static ref SENTENCE_EMBEDDINGS_MODEL: Arc<Mutex<SentenceEmbeddingsModel>> = Arc::new(Mutex::new(
@@ -165,17 +169,107 @@ pub fn extract_embeddings(dataset: &Vec<(&str,&f64)>, path: Option<String>) -> a
     Ok(list_outputs)
 }
 
+/*
+pub async fn huggingface_transformers_extract_topics(
+    dataset: &Vec<(&str, &f32)>,
+    topics: &[&str],
+    path: Option<String>,
+) -> anyhow::Result<Vec<Vec<f32>>> {
+    let mut outputs: Vec<(Vec<f32>, usize)> = Vec::new();
+    let topics_clone: Vec<String> = topics.iter().map(|x| x.to_string()).collect();
+    let chunks = dataset.chunks(dataset.len() / 5 + 1).enumerate();
 
-pub fn huggingface_transformers_extract_topics(dataset: &Vec<(&str,&f32)>, topics: &[&str], path: Option<String>) -> anyhow::Result<Vec<Vec<f32>>> {
+    let mut set = JoinSet::new();
 
-    let mut outputs: Vec<Vec<f32>> = Vec::new();
+for (chunk_index, chunk) in chunks {
+    // Process each chunk in parallel
+    let topics_clone = topics_clone.clone();
+    let fut = tokio::spawn(async move {
+        let mut chunk_outputs = Vec::new();
+        
+        // Convert the chunk into a Vec<&str>
+        let each_clone: Vec<&str> = chunk.iter().map(|&(each, _)| each).collect();
 
+        let result = huggingface_transformers_predict_multilabel(&topics_clone, &each_clone);
+        chunk_outputs.push((result.unwrap(), chunk_index));
 
+        chunk_outputs
+    });
+    set.spawn(fut);
+}
+
+    while let Some(chunk_outputs) = set.join_next().await {
+        for result in chunk_outputs? {
+            println!("\nDone processing index {}", result.1);
+            outputs.append(&mut result);
+        }
+    }
+
+    outputs.sort_by_key(|&(_, i)| i);
+    let outputs: Vec<Vec<f32>> = outputs.into_iter().map(|(result, _)| result).collect();
+
+    if let Some(ref path) = path {
+        let json_string =
+            serde_json::json!({"predictions": &outputs, "dataset": dataset, "topics": topics})
+                .to_string();
+        fs::write(&path, &json_string).ok();
+    }
+
+    Ok(outputs)
+}*/
+
+pub async fn huggingface_transformers_extract_topics(dataset: &Vec<(&str,&f32)>, topics: &[&str], path: Option<String>) -> anyhow::Result<Vec<Vec<f32>>> {
+
+    let mut outputs: Vec<(Vec<f32>, usize)> = Vec::new();
+/*
     for (i,each) in dataset.iter().map(|x| x.0).enumerate().collect::<Vec<(usize,&str)>>(){
 
         println!("\nProcessing index {}", i);
         outputs.push(huggingface_transformers_predict_multilabel(&topics[..], each)?);
     }
+*/
+    let topics_clone = topics.iter().map(|x| x.to_string()).collect::<Vec<String>>();
+
+    let mut set = JoinSet::new();
+
+    let mut iter = dataset.iter().enumerate();
+
+
+    // TODO: chunk optimize, write json, let python script read and write json, 
+
+    // Initial spawn of tasks
+    for _ in 0..8 {
+        if let Some((i, &(each, _))) = iter.next() {
+           let topics_clone = topics_clone.clone();
+           let each_clone = each.to_string();
+           let fut = tokio::spawn(async move {
+               (huggingface_transformers_single_predict_multilabel(&topics_clone.iter().map(|x| x.as_str()).collect::<Vec<&str>>()[..], each_clone.as_str()).unwrap(),i)
+           });
+           set.spawn(fut);
+        } else {
+            break;
+        }
+    }
+
+    while let Some(res) = set.join_next().await {
+        let result = res??;
+        println!("\nDone processing index {}", result.1);
+        outputs.push(result);
+
+        // Spawn the next task
+        if let Some((i, &(each, _))) = iter.next() {
+           let topics_clone = topics_clone.clone();
+           let each_clone = each.to_string();
+           let fut = tokio::spawn(async move {
+               (huggingface_transformers_single_predict_multilabel(&topics_clone.iter().map(|x| x.as_str()).collect::<Vec<&str>>()[..], each_clone.as_str()).unwrap(),i)
+           });
+           set.spawn(fut);
+        }
+    }
+
+    outputs.sort_by_key(|&(_, i)| i);
+    let outputs: Vec<Vec<f32>> = outputs.into_iter().map(|(result, _)| result).collect();
+
 
     if let Some(ref path) = path { 
         let json_string = serde_json::json!({"predictions":&outputs,"dataset":dataset, "topics":topics}).to_string();
@@ -185,10 +279,50 @@ pub fn huggingface_transformers_extract_topics(dataset: &Vec<(&str,&f32)>, topic
     Ok(outputs)
 }
 
-pub fn huggingface_transformers_predict_multilabel(topics: &[&str], text: &str) -> Result<Vec<f32>, io::Error> {
+
+/*
+pub fn huggingface_transformers_predict_multilabel(topics: &[&str], texts: Vec<&str>) -> Result<Vec<f32>, io::Error> {
+    // Create a temporary file and write the texts into it
+    let mut temp_file = NamedTempFile::new()?;
+    for text in texts {
+        temp_file.write_all(text.as_bytes())?;
+        temp_file.write_all(b"\n")?;  // Add a newline between texts
+    }
+
     let output = Command::new("./extract_topics.sh")
-        .args(&[&topics.join(","), text])
-//        .stderr(std::process::Stdio::null())
+        .args(&[&topics.join(","), temp_file.path().to_str().unwrap()])
+        .stderr(Stdio::null())
+        .spawn()?
+        .wait_with_output()?;
+
+    if output.status.success() {
+        let output_str = match String::from_utf8(output.stdout) {
+            Ok(s) => s,
+            Err(e) => return Err(io::Error::new(io::ErrorKind::Other, format!("Failed to parse embeddings: {}", e))),
+        };
+         // todo read line by line form tmpflie
+        let values: Result<Vec<f32>, _> = output_str
+            .split_whitespace()
+            .map(|s| s.parse())
+            .collect();
+
+        match values {
+            Ok(embeddings) => Ok(embeddings),
+            Err(e) => Err(io::Error::new(io::ErrorKind::Other, format!("Failed to parse embeddings: {}", e))),
+        }
+    } else {
+        Err(io::Error::new(io::ErrorKind::Other, format!("Command execution failed {:?}", output)))
+    }
+}*/
+
+pub fn huggingface_transformers_single_predict_multilabel(topics: &[&str], text: &str) -> Result<Vec<f32>, io::Error> {
+    // Create a temporary file and write the text into it
+    let mut temp_file = NamedTempFile::new()?;
+    temp_file.write_all(text.as_bytes())?;
+
+    let output = Command::new("./extract_topics.sh")
+        .args(&[&topics.join(","), temp_file.path().to_str().unwrap()])
+        .stderr(std::process::Stdio::null())
         .spawn()?
         .wait_with_output()?;
 

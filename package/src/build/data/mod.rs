@@ -76,7 +76,7 @@ pub fn read_datasets(dataset_paths: &[&str]) -> anyhow::Result<Vec<(String,f32)>
 
 
 pub fn generate_shuffled_idx(paths: &[&str]) -> anyhow::Result<Vec<usize>> {
-    let (x_dataset, _) = load_embeddings_from_file(paths)?;
+    let (x_dataset, _) = load_topics_from_file(paths,&vec![])?;
 
     // create an index array
     let mut idx: Vec<usize> = (0..x_dataset.len()).collect();

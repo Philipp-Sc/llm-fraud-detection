@@ -1,4 +1,9 @@
+use std::cmp::Ordering;
 
+use importance::score::Model;
+use importance::*; 
+use importance::score::ScoreKind; 
+use importance::importance; 
 use smartcore::linalg::naive::dense_matrix::DenseMatrix;
 
 use std::sync::Arc;
@@ -19,9 +24,10 @@ lazy_static::lazy_static! {
 }
 
 
+/*
 pub trait Model: Send + Sync {
     fn predict(&self, x: &Vec<Vec<f32>>) -> Vec<f32>;
-}
+}*/
 
 pub enum ModelType {
     KNN,
@@ -172,3 +178,35 @@ pub fn calculate_metrics(y: &[f32], y_hat: &[f32], thresholds: &[f32]) {
 }
 
 
+
+
+
+pub fn feature_importance(x_dataset_shuffled: &Vec<Vec<f32>>, y_dataset_shuffled: &Vec<f32>, feature_labels: Vec<String>, random_forest_label: &str) -> anyhow::Result<()> {
+
+    let model = ClassificationMockModel {
+        label: random_forest_label.to_string(),
+        model_type: ModelType::RandomForest
+    };
+
+    let opts = Opts {
+        verbose: true,
+        kind: Some(ScoreKind::Mae),
+        n: Some(500),
+        only_means: true,
+        scale: true,
+    };
+
+    let importances = importance(&model, x_dataset_shuffled.to_owned(), y_dataset_shuffled.to_owned(), opts);
+    println!("Importances: {:?}", importances);
+
+    let importances_means: Vec<f32> = importances.importances_means;
+    let mut result: Vec<(f32, String)> = importances_means.into_iter().zip(feature_labels).collect();
+    result.sort_by(|(a,_), (b,_)| b.partial_cmp(&a).unwrap_or(Ordering::Equal));
+
+    let json_string = serde_json::json!({"feature_importance": &result}).to_string();
+
+    println!("Result: \n\n{:?}", json_string);
+
+    Ok(())
+
+}

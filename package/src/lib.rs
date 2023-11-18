@@ -5,6 +5,7 @@ use build::classification::*;
 use build::language_model::zero_shot_classification::*;
 use rayon::iter::IntoParallelIterator;
 use rayon::iter::ParallelIterator;
+use importance::score::Model;
 
 
 pub fn fraud_probabilities(texts: &[&str]) ->  anyhow::Result<Vec<f32>> {
