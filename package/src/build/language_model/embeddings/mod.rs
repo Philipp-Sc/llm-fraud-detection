@@ -1,17 +1,13 @@
 use std::fs;
-
-
-
-
-
+use std::fs::File;
 use std::process::Command;
-use std::io::{self};
+use std::io::{self, Read};
 
 
 pub fn llama_cpp_embedding(text: &str) -> Result<Vec<f32>, io::Error> {
     let input = text.to_string().chars().take(8192*4).collect::<String>();
     let output = Command::new("/usr/llama.cpp/embedding")
-        .args(&["-m", "./zephyr-7b-alpha.Q8_0.gguf", "--log-disable", "--ctx-size","8192","--mlock","--threads","14", "-p", &input])
+        .args(&["-m", "./una-cybertron-7b-v2-bf16.Q8_0.gguf", "--log-disable", "--ctx-size","8192", "-p", &input])
         .stderr(std::process::Stdio::null())
         .output()?;
 
@@ -24,7 +20,7 @@ pub fn llama_cpp_embedding(text: &str) -> Result<Vec<f32>, io::Error> {
             .split_whitespace()
             .map(|s| s.parse())
             .collect();
-        
+
         match values {
             Ok(embeddings) => Ok(embeddings),
             Err(e) => Err(io::Error::new(io::ErrorKind::Other, format!("Failed to parse embeddings: {}", e))),
@@ -35,7 +31,7 @@ pub fn llama_cpp_embedding(text: &str) -> Result<Vec<f32>, io::Error> {
 }
 
 
-pub fn extract_embeddings(dataset: &Vec<(&str,&f32)>, path: Option<String>) -> anyhow::Result<Vec<Vec<f32>>> {
+pub fn extract_embeddings(dataset: &Vec<(&str,&f32)>) -> anyhow::Result<Vec<Vec<f32>>> {
     let mut list_outputs: Vec<Vec<f32>> = Vec::new();
 
 
@@ -51,13 +47,52 @@ pub fn extract_embeddings(dataset: &Vec<(&str,&f32)>, path: Option<String>) -> a
         };
         println!("count: {}",list_outputs.len());
     }
-    if let Some(ref path) = path {
-        let json_string = serde_json::json!({"embeddings":&list_outputs,"dataset":dataset}).to_string();
-        fs::write(&path, &json_string).ok();
-    }
 
     Ok(list_outputs)
 
+}
+
+pub fn load_llama_cpp_embeddings_from_file(path: &str) -> anyhow::Result<(Vec<Vec<f32>>, Vec<f32>)> {
+    // Read the contents of the file
+    let mut file = File::open(path)?;
+    let mut contents = String::new();
+    file.read_to_string(&mut contents)?;
+
+    // Parse the JSON content
+    let json_data: Vec<serde_json::Value> = serde_json::from_str(&contents)?;
+
+    // Initialize vectors to store embeddings and labels
+    let mut embeddings: Vec<Vec<f32>> = Vec::new();
+    let mut labels: Vec<f32> = Vec::new();
+
+    // Iterate over each entry in the JSON data
+    for entry in json_data {
+        // Extract the "embedding" field
+        if let Some(embedding) = entry["embedding"].as_array() {
+            // Convert the embedding to a vector of f32
+            let embedding_vec: Vec<f32> = embedding
+                .iter()
+                .filter_map(|value| value.as_f64().map(|v| v as f32))
+                .collect();
+
+            // Push the embedding to the embeddings vector
+            embeddings.push(embedding_vec);
+        }
+
+        // Extract the label from the "entry" field (assuming it's an array)
+        if let Some(entry_array) = entry["entry"].as_array() {
+            // Assuming the label is the second item in the array
+            if let Some(label_value) = entry_array.get(1) {
+                // Convert the label to f32 and push it to the labels vector
+                if let Some(label) = label_value.as_f64() {
+                    labels.push(label as f32);
+                }
+            }
+        }
+    }
+
+    // Return the result as a tuple
+    Ok((embeddings, labels))
 }
 
 pub fn load_embeddings_from_file(paths: &[&str]) -> anyhow::Result<(Vec<Vec<f32>>, Vec<f32>)> {
@@ -128,7 +163,6 @@ pub fn load_embeddings_from_file(paths: &[&str]) -> anyhow::Result<(Vec<Vec<f32>
         .unzip();
 
     println!("Final x_dataset and y_dataset both contain {} entries.", y_dataset.len());
-  
 
     Ok((x_dataset,y_dataset))
 }

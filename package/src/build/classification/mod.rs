@@ -1,9 +1,9 @@
 use std::cmp::Ordering;
 
 use importance::score::Model;
-use importance::*; 
-use importance::score::ScoreKind; 
-use importance::importance; 
+use importance::*;
+use importance::score::ScoreKind;
+use importance::importance;
 use smartcore::linalg::naive::dense_matrix::DenseMatrix;
 
 use std::sync::Arc;
